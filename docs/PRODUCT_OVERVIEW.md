@@ -17,6 +17,7 @@ Website Chat Extension is a browser extension that lets users ask questions abou
 
 - First launch opens an onboarding flow instead of an empty chat.
 - Users select a provider, enter an API key, and confirm their setup in a few steps.
+- Provider selection and model selection should be treated separately, because one provider key can expose multiple models.
 - After setup, the extension shows a short scanning state while building the first page context.
 - After setup, the extension opens directly into chat for future sessions.
 - The extension clearly shows which site the active conversation belongs to.
@@ -38,6 +39,7 @@ The first usable version should include:
 - Browser action popup UI
 - Onboarding flow with provider selection
 - API key storage in local extension storage
+- Default model selection per provider
 - A transient scanning screen for active page context preparation
 - Active tab page content extraction
 - Page snapshot creation for conversations
@@ -68,10 +70,21 @@ History should not be treated as chat text only. Each conversation should store:
 
 ### Storage Model
 
-- Provider settings and API keys: `chrome.storage.local`
+- Provider settings, API keys, and default model selection: `chrome.storage.local`
 - Conversation history and page snapshots: `IndexedDB`
 
 This gives a practical MVP with user-side persistence while leaving room for optional encryption in a later phase.
+
+### Provider and Model Model
+
+Providers and models should be stored separately.
+
+- A provider holds the saved API key and provider-level preferences.
+- A model is selected under a provider, because a single provider key can expose multiple models.
+- Each provider should have a default model for new conversations.
+- Each conversation should persist the exact provider and model used for that chat.
+
+This is especially important for OpenRouter and OpenAI, where one account can expose many different models.
 
 ### UI Flow Model
 
@@ -79,6 +92,7 @@ The popup should follow a clear state-driven flow:
 
 - first-run welcome
 - provider selection
+- model selection for the chosen provider
 - one-time API key setup
 - transient scanning state while preparing page context
 - main chat view
