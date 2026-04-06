@@ -667,8 +667,6 @@ export function PopupApp() {
           isUsingLiveSnapshot={isUsingLiveSnapshot}
           latestSnapshot={latestSnapshot}
           modelLabel={selectedModelDefinition?.label ?? 'No model selected'}
-          providerLabel={selectedProviderDefinition.label}
-          providerSupportsChat={selectedProvider === 'openrouter'}
           questionInput={questionInput}
           readyPanel={readyPanel}
           setQuestionInput={setQuestionInput}
@@ -1020,8 +1018,6 @@ function ConfiguredScreen({
   isUsingLiveSnapshot,
   latestSnapshot,
   modelLabel,
-  providerLabel,
-  providerSupportsChat,
   questionInput,
   readyPanel,
   setQuestionInput,
@@ -1044,8 +1040,6 @@ function ConfiguredScreen({
   isUsingLiveSnapshot: boolean;
   latestSnapshot: SnapshotSummary | null;
   modelLabel: string;
-  providerLabel: string;
-  providerSupportsChat: boolean;
   questionInput: string;
   readyPanel: ReadyPanel;
   setQuestionInput: (nextValue: string) => void;
@@ -1073,7 +1067,7 @@ function ConfiguredScreen({
         <div className="chat-header-copy">
           <h1>Chat on {activeHostname ?? 'this website'}</h1>
           <p className="subtitle">
-            Provider configured: {providerLabel}. Default model: {modelLabel}.
+            OpenRouter configured. Default model: {modelLabel}.
           </p>
         </div>
 
@@ -1196,12 +1190,6 @@ function ConfiguredScreen({
             )}
 
             {errorMessage ? <p className="error-text">{errorMessage}</p> : null}
-            {!providerSupportsChat ? (
-              <p className="helper-text helper-text--body">
-                Grounded chat requests are currently enabled only for OpenRouter
-                in this build.
-              </p>
-            ) : null}
           </section>
 
           <section className="chat-card chat-card--scrollable">
@@ -1231,7 +1219,7 @@ function ConfiguredScreen({
           <section className="composer-card">
             <textarea
               className="composer-input"
-              disabled={!providerSupportsChat || !activeSnapshot}
+              disabled={!activeSnapshot}
               onChange={(event) => setQuestionInput(event.target.value)}
               onKeyDown={onQuestionInputKeyDown}
               placeholder="Ask about this page..."
@@ -1260,11 +1248,7 @@ function ConfiguredScreen({
                 </button>
                 <button
                   className="button button--primary"
-                  disabled={
-                    isSubmittingQuestion ||
-                    !providerSupportsChat ||
-                    !activeSnapshot
-                  }
+                  disabled={isSubmittingQuestion || !activeSnapshot}
                   onClick={onAskQuestion}
                   type="button"
                 >
