@@ -1,10 +1,7 @@
+import type { ProviderModelSummary } from '../../types/provider-models';
 import type { SupportedProvider } from '../../types/runtime';
 
-export type ModelDefinition = {
-  id: string;
-  label: string;
-  description: string;
-};
+export type ModelDefinition = ProviderModelSummary;
 
 export type ProviderDefinition = {
   id: SupportedProvider;
@@ -108,20 +105,24 @@ export const PROVIDERS: ProviderDefinition[] = [
       'A flexible choice if you want one integration point for many models.',
     models: [
       {
-        id: 'qwen/qwen3-coder',
-        label: 'qwen/qwen3-coder',
+        id: 'qwen/qwen3.6-plus:free',
+        isFree: true,
+        label: 'qwen/qwen3.6-plus:free',
         description:
-          'Strong default for technical docs, code pages, and grounded Q&A.',
+          'Free default for grounded Q&A through OpenRouter with reasoning enabled.',
+        providerName: 'Alibaba',
       },
       {
         id: 'openai/gpt-4.1-mini',
         label: 'openai/gpt-4.1-mini',
         description: 'Fast fallback model for lighter page summaries.',
+        providerName: 'OpenAI',
       },
       {
         id: 'anthropic/claude-3.7-sonnet',
         label: 'anthropic/claude-3.7-sonnet',
         description: 'Higher quality reasoning when the page content is dense.',
+        providerName: 'Anthropic',
       },
     ],
   },

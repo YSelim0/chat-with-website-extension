@@ -59,3 +59,7 @@ export async function getLatestSnapshotForHostname(hostname: string) {
 
   return latestSnapshot ? createSnapshotSummary(latestSnapshot) : null;
 }
+
+export async function getPageSnapshotById(snapshotId: string) {
+  return extensionDatabase.pageSnapshots.get(snapshotId);
+}

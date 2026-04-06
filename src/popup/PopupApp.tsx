@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { type KeyboardEvent, useEffect, useMemo, useState } from 'react';
 
 import { getActiveTabHostname } from '../lib/browser/active-tab';
 import {
@@ -15,10 +15,12 @@ import {
   getSavedModelId,
   saveProviderConfiguration,
 } from '../lib/storage/settings';
+import type { AskQuestionResponse, ConversationMessage } from '../types/chat';
 import type {
   ExtractActivePageResponse,
   SnapshotSummary,
 } from '../types/page-context';
+import type { ListOpenRouterModelsResponse } from '../types/provider-models';
 import type { SupportedProvider } from '../types/runtime';
 
 type PopupScreen =
@@ -32,6 +34,7 @@ type PopupScreen =
 
 const POPUP_EXTRACTION_TIMEOUT_MS = 50000;
 const MINIMUM_SCANNING_DURATION_MS = 900;
+const MODEL_PAGE_SIZE = 20;
 
 function withTimeout<T>(
   promise: Promise<T>,
@@ -85,6 +88,23 @@ export function PopupApp() {
   );
   const [isSaving, setIsSaving] = useState(false);
   const [isRefreshingContext, setIsRefreshingContext] = useState(false);
+  const [isSubmittingQuestion, setIsSubmittingQuestion] = useState(false);
+  const [questionInput, setQuestionInput] = useState('');
+  const [modelSearchQuery, setModelSearchQuery] = useState('');
+  const [openRouterModels, setOpenRouterModels] = useState<ModelDefinition[]>(
+    [],
+  );
+  const [isLoadingOpenRouterModels, setIsLoadingOpenRouterModels] =
+    useState(false);
+  const [openRouterModelError, setOpenRouterModelError] = useState<
+    string | null
+  >(null);
+  const [showFreeOpenRouterModelsOnly, setShowFreeOpenRouterModelsOnly] =
+    useState(true);
+  const [visibleModelCount, setVisibleModelCount] = useState(MODEL_PAGE_SIZE);
+  const [conversationMessages, setConversationMessages] = useState<
+    ConversationMessage[]
+  >([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const selectedProviderDefinition = useMemo(() => {
@@ -96,6 +116,60 @@ export function PopupApp() {
       (model) => model.id === selectedModelId,
     );
   }, [selectedModelId, selectedProviderDefinition]);
+
+  const availableModels = useMemo(() => {
+    if (!selectedProviderDefinition) {
+      return [];
+    }
+
+    if (selectedProvider !== 'openrouter') {
+      return selectedProviderDefinition.models;
+    }
+
+    return openRouterModels.length > 0
+      ? openRouterModels
+      : selectedProviderDefinition.models;
+  }, [openRouterModels, selectedProvider, selectedProviderDefinition]);
+
+  const filteredModels = useMemo(() => {
+    const normalizedQuery = modelSearchQuery.trim().toLowerCase();
+
+    return availableModels.filter((model) => {
+      if (
+        selectedProvider === 'openrouter' &&
+        showFreeOpenRouterModelsOnly &&
+        !model.isFree
+      ) {
+        return false;
+      }
+
+      if (!normalizedQuery) {
+        return true;
+      }
+
+      return [model.id, model.label, model.providerName ?? '']
+        .join(' ')
+        .toLowerCase()
+        .includes(normalizedQuery);
+    });
+  }, [
+    availableModels,
+    modelSearchQuery,
+    selectedProvider,
+    showFreeOpenRouterModelsOnly,
+  ]);
+
+  const selectedModelFromAvailableList = useMemo(() => {
+    return (
+      availableModels.find((model) => model.id === selectedModelId) ?? null
+    );
+  }, [availableModels, selectedModelId]);
+
+  const visibleModels = useMemo(() => {
+    return filteredModels.slice(0, visibleModelCount);
+  }, [filteredModels, visibleModelCount]);
+
+  const hasMoreModels = filteredModels.length > visibleModels.length;
 
   useEffect(() => {
     let isMounted = true;
@@ -147,6 +221,77 @@ export function PopupApp() {
     };
   }, []);
 
+  useEffect(() => {
+    if (screen !== 'model-selection' || selectedProvider !== 'openrouter') {
+      return;
+    }
+
+    let isMounted = true;
+
+    async function loadOpenRouterModels() {
+      try {
+        setIsLoadingOpenRouterModels(true);
+        setOpenRouterModelError(null);
+
+        const response = (await chrome.runtime.sendMessage({
+          type: 'openrouter:list-models',
+        })) as ListOpenRouterModelsResponse;
+
+        if (!isMounted) {
+          return;
+        }
+
+        if (!response.ok) {
+          setOpenRouterModelError(response.error);
+          setOpenRouterModels([]);
+          return;
+        }
+
+        setOpenRouterModels(response.models);
+
+        const hasCurrentSelection = response.models.some(
+          (model) => model.id === selectedModelId,
+        );
+
+        if (hasCurrentSelection) {
+          return;
+        }
+
+        const preferredModel =
+          response.models.find(
+            (model) => model.id === 'qwen/qwen3.6-plus:free',
+          ) ||
+          response.models.find((model) => model.isFree) ||
+          response.models[0];
+
+        if (preferredModel) {
+          setSelectedModelId(preferredModel.id);
+        }
+      } catch (error) {
+        if (!isMounted) {
+          return;
+        }
+
+        setOpenRouterModelError(
+          error instanceof Error
+            ? error.message
+            : 'Failed to load the OpenRouter model list.',
+        );
+        setOpenRouterModels([]);
+      } finally {
+        if (isMounted) {
+          setIsLoadingOpenRouterModels(false);
+        }
+      }
+    }
+
+    void loadOpenRouterModels();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [screen, selectedModelId, selectedProvider]);
+
   function handleContinueFromWelcome() {
     setScreen('provider-selection');
   }
@@ -159,6 +304,9 @@ export function PopupApp() {
     setSelectedProvider(provider);
     setSelectedModelId(savedModelId ?? fallbackModel);
     setApiKeyInput(savedApiKey);
+    setModelSearchQuery('');
+    setVisibleModelCount(MODEL_PAGE_SIZE);
+    setConversationMessages([]);
     setErrorMessage(null);
     setScreen('provider-setup');
   }
@@ -280,6 +428,9 @@ export function PopupApp() {
         ? getInitialSelectedModel(settings, selectedProvider)
         : (getDefaultModelForProvider(selectedProvider)?.id ?? ''),
     );
+    setModelSearchQuery('');
+    setVisibleModelCount(MODEL_PAGE_SIZE);
+    setConversationMessages([]);
     setErrorMessage(null);
     setScreen('provider-setup');
   }
@@ -291,6 +442,69 @@ export function PopupApp() {
     } finally {
       setIsRefreshingContext(false);
     }
+  }
+
+  async function handleAskQuestion() {
+    const trimmedQuestion = questionInput.trim();
+
+    if (!trimmedQuestion) {
+      setErrorMessage('Enter a question before sending it.');
+      return;
+    }
+
+    if (!latestSnapshot) {
+      setErrorMessage(
+        'Scan the page context before asking a grounded question.',
+      );
+      return;
+    }
+
+    try {
+      setIsSubmittingQuestion(true);
+      setErrorMessage(null);
+
+      const response = (await chrome.runtime.sendMessage({
+        payload: {
+          model: selectedModelId,
+          provider: selectedProvider,
+          question: trimmedQuestion,
+          snapshotId: latestSnapshot.id,
+        },
+        type: 'chat:ask-question',
+      })) as AskQuestionResponse;
+
+      if (!response.ok) {
+        setErrorMessage(response.error);
+        return;
+      }
+
+      setConversationMessages(response.messages);
+      setQuestionInput('');
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : 'The grounded chat request failed unexpectedly.',
+      );
+    } finally {
+      setIsSubmittingQuestion(false);
+    }
+  }
+
+  function handleQuestionInputKeyDown(
+    event: KeyboardEvent<HTMLTextAreaElement>,
+  ) {
+    if (event.key !== 'Enter' || event.shiftKey) {
+      return;
+    }
+
+    event.preventDefault();
+
+    if (isSubmittingQuestion) {
+      return;
+    }
+
+    void handleAskQuestion();
   }
 
   if (screen === 'loading') {
@@ -336,13 +550,33 @@ export function PopupApp() {
       {screen === 'model-selection' && selectedProviderDefinition ? (
         <ModelSelectionScreen
           errorMessage={errorMessage}
+          hasMoreModels={hasMoreModels}
+          isLoadingModels={isLoadingOpenRouterModels}
           isSaving={isSaving}
-          models={selectedProviderDefinition.models}
+          modelListError={openRouterModelError}
+          modelSearchQuery={modelSearchQuery}
+          models={visibleModels}
           providerLabel={selectedProviderDefinition.label}
+          providerSupportsDynamicModels={selectedProvider === 'openrouter'}
+          selectedModel={selectedModelFromAvailableList}
           selectedModelId={selectedModelId}
+          showFreeOnly={showFreeOpenRouterModelsOnly}
           onBack={handleBackToProviderSetup}
           onChooseModel={setSelectedModelId}
+          onLoadMoreModels={() => {
+            setVisibleModelCount(
+              (currentValue) => currentValue + MODEL_PAGE_SIZE,
+            );
+          }}
+          onModelSearchQueryChange={(nextValue) => {
+            setModelSearchQuery(nextValue);
+            setVisibleModelCount(MODEL_PAGE_SIZE);
+          }}
           onSave={handleSaveProviderConfiguration}
+          onToggleFreeOnly={() => {
+            setShowFreeOpenRouterModelsOnly((currentValue) => !currentValue);
+            setVisibleModelCount(MODEL_PAGE_SIZE);
+          }}
         />
       ) : null}
 
@@ -353,11 +587,18 @@ export function PopupApp() {
       {screen === 'ready' && selectedProviderDefinition ? (
         <ConfiguredScreen
           activeHostname={activeHostname}
+          conversationMessages={conversationMessages}
           errorMessage={errorMessage}
           isRefreshingContext={isRefreshingContext}
+          isSubmittingQuestion={isSubmittingQuestion}
           latestSnapshot={latestSnapshot}
           modelLabel={selectedModelDefinition?.label ?? 'No model selected'}
           providerLabel={selectedProviderDefinition.label}
+          providerSupportsChat={selectedProvider === 'openrouter'}
+          questionInput={questionInput}
+          setQuestionInput={setQuestionInput}
+          onQuestionInputKeyDown={handleQuestionInputKeyDown}
+          onAskQuestion={handleAskQuestion}
           onRefreshContext={handleRefreshContext}
           onOpenProviderSettings={handleOpenProviderSettings}
         />
@@ -522,22 +763,42 @@ function ProviderSetupScreen({
 
 function ModelSelectionScreen({
   errorMessage,
+  hasMoreModels,
+  isLoadingModels,
   isSaving,
+  modelListError,
+  modelSearchQuery,
   models,
   providerLabel,
+  providerSupportsDynamicModels,
+  selectedModel,
   selectedModelId,
+  showFreeOnly,
   onBack,
   onChooseModel,
+  onLoadMoreModels,
+  onModelSearchQueryChange,
   onSave,
+  onToggleFreeOnly,
 }: {
   errorMessage: string | null;
+  hasMoreModels: boolean;
+  isLoadingModels: boolean;
   isSaving: boolean;
+  modelListError: string | null;
+  modelSearchQuery: string;
   models: ModelDefinition[];
   providerLabel: string;
+  providerSupportsDynamicModels: boolean;
+  selectedModel: ModelDefinition | null;
   selectedModelId: string;
+  showFreeOnly: boolean;
   onBack: () => void;
   onChooseModel: (modelId: string) => void;
+  onLoadMoreModels: () => void;
+  onModelSearchQueryChange: (nextValue: string) => void;
   onSave: () => void;
+  onToggleFreeOnly: () => void;
 }) {
   return (
     <section className="screen-panel">
@@ -549,43 +810,122 @@ function ModelSelectionScreen({
         </p>
       </header>
 
-      <div className="provider-grid">
-        {models.map((model) => {
-          const isSelected = model.id === selectedModelId;
+      {providerSupportsDynamicModels ? (
+        <section className="card card--accent-soft model-tools">
+          <input
+            className="text-input"
+            onChange={(event) => onModelSearchQueryChange(event.target.value)}
+            placeholder="Search OpenRouter models"
+            type="text"
+            value={modelSearchQuery}
+          />
 
-          return (
-            <button
-              className={`provider-card${isSelected ? ' provider-card--selected' : ''}`}
-              key={model.id}
-              onClick={() => onChooseModel(model.id)}
-              type="button"
-            >
-              <span className="provider-card__title">{model.label}</span>
-              <span className="provider-card__description">
-                {model.description}
-              </span>
-            </button>
-          );
-        })}
+          <label className="toggle-row">
+            <input
+              checked={showFreeOnly}
+              onChange={onToggleFreeOnly}
+              type="checkbox"
+            />
+            <span className="helper-text helper-text--tight">Free only</span>
+          </label>
+
+          {isLoadingModels ? (
+            <p className="helper-text helper-text--body">
+              Loading OpenRouter models...
+            </p>
+          ) : null}
+
+          {modelListError ? (
+            <p className="helper-text helper-text--body">
+              Could not load the live model list. Showing fallback models
+              instead.
+            </p>
+          ) : null}
+        </section>
+      ) : null}
+
+      {selectedModel ? (
+        <section className="card card--accent selected-model-card">
+          <div className="provider-card__row">
+            <h2>Selected model</h2>
+            {selectedModel.isFree ? (
+              <span className="model-badge">Free</span>
+            ) : null}
+          </div>
+          <p className="helper-text helper-text--body">{selectedModel.label}</p>
+          {selectedModel.providerName ? (
+            <p className="helper-text helper-text--tight">
+              {selectedModel.providerName}
+            </p>
+          ) : null}
+        </section>
+      ) : null}
+
+      <div className="provider-grid provider-grid--scrollable">
+        {models.length === 0 ? (
+          <section className="card card--accent-soft">
+            <p className="helper-text helper-text--body">
+              No models matched the current filters.
+            </p>
+          </section>
+        ) : (
+          models.map((model) => {
+            const isSelected = model.id === selectedModelId;
+
+            return (
+              <button
+                className={`provider-card${isSelected ? ' provider-card--selected' : ''}`}
+                key={model.id}
+                onClick={() => onChooseModel(model.id)}
+                type="button"
+              >
+                <div className="provider-card__row">
+                  <span className="provider-card__title">{model.label}</span>
+                  {model.isFree ? (
+                    <span className="model-badge">Free</span>
+                  ) : null}
+                </div>
+                {model.providerName ? (
+                  <span className="provider-card__meta">
+                    {model.providerName}
+                  </span>
+                ) : null}
+                <span className="provider-card__description">
+                  {model.description}
+                </span>
+              </button>
+            );
+          })
+        )}
       </div>
+
+      {hasMoreModels ? (
+        <button
+          className="button button--ghost"
+          onClick={onLoadMoreModels}
+          type="button"
+        >
+          Load more models
+        </button>
+      ) : null}
 
       <section className="card card--accent-soft">
         <h2>Model list behavior</h2>
         <p className="helper-text helper-text--body">
-          If the provider supports live model listing, the popup can fetch it
-          later. Until then, a safe fallback model catalog keeps setup simple.
+          OpenRouter models are fetched dynamically in this screen. If loading
+          fails, the setup falls back to a small built-in catalog.
         </p>
       </section>
 
       {errorMessage ? <p className="error-text">{errorMessage}</p> : null}
 
-      <div className="button-row">
+      <div className="button-row button-row--sticky">
         <button className="button button--ghost" onClick={onBack} type="button">
           Back
         </button>
         <button
           className="button button--primary"
-          disabled={isSaving}
+          disabled={isSaving || !selectedModelId}
           onClick={onSave}
           type="button"
         >
@@ -632,20 +972,34 @@ function ScanningScreen({ activeHostname }: { activeHostname: string | null }) {
 
 function ConfiguredScreen({
   activeHostname,
+  conversationMessages,
   errorMessage,
   isRefreshingContext,
+  isSubmittingQuestion,
   latestSnapshot,
   modelLabel,
   providerLabel,
+  providerSupportsChat,
+  questionInput,
+  setQuestionInput,
+  onQuestionInputKeyDown,
+  onAskQuestion,
   onRefreshContext,
   onOpenProviderSettings,
 }: {
   activeHostname: string | null;
+  conversationMessages: ConversationMessage[];
   errorMessage: string | null;
   isRefreshingContext: boolean;
+  isSubmittingQuestion: boolean;
   latestSnapshot: SnapshotSummary | null;
   modelLabel: string;
   providerLabel: string;
+  providerSupportsChat: boolean;
+  questionInput: string;
+  setQuestionInput: (nextValue: string) => void;
+  onQuestionInputKeyDown: (event: KeyboardEvent<HTMLTextAreaElement>) => void;
+  onAskQuestion: () => void;
   onRefreshContext: () => void;
   onOpenProviderSettings: () => void;
 }) {
@@ -662,16 +1016,18 @@ function ConfiguredScreen({
         <div className="status-pill">Setup complete</div>
       </header>
 
-      <section className="chat-card">
-        <p className="chat-card__eyebrow">Assistant</p>
-        <p className="chat-card__body">
-          The provider and default model are configured locally. The next phase
-          will wire the popup to snapshot-based grounded chat on extracted page
-          content.
-        </p>
-      </section>
-
-      <section className="card card--accent-soft">
+      <section className="card card--accent-soft snapshot-card">
+        <div className="snapshot-card__header">
+          <h2>Latest page snapshot</h2>
+          <button
+            className="button button--secondary"
+            disabled={isRefreshingContext}
+            onClick={onRefreshContext}
+            type="button"
+          >
+            {isRefreshingContext ? 'Refreshing...' : 'Refresh'}
+          </button>
+        </div>
         <h2>Latest page snapshot</h2>
         {latestSnapshot ? (
           <div className="snapshot-meta">
@@ -694,10 +1050,48 @@ function ConfiguredScreen({
         )}
 
         {errorMessage ? <p className="error-text">{errorMessage}</p> : null}
+        {!providerSupportsChat ? (
+          <p className="helper-text helper-text--body">
+            Grounded chat requests are currently enabled only for OpenRouter in
+            this build.
+          </p>
+        ) : null}
+      </section>
+
+      <section className="chat-card chat-card--scrollable">
+        {conversationMessages.length === 0 ? (
+          <>
+            <p className="chat-card__eyebrow">Assistant</p>
+            <p className="chat-card__body">
+              Ask a question about the current page. Responses will use only the
+              saved snapshot context.
+            </p>
+          </>
+        ) : (
+          <div className="message-list">
+            {conversationMessages.map((message) => (
+              <article
+                className={`message-bubble message-bubble--${message.role}`}
+                key={message.id}
+              >
+                <p className="chat-card__eyebrow">{message.role}</p>
+                <p className="chat-card__body">{message.content}</p>
+              </article>
+            ))}
+          </div>
+        )}
       </section>
 
       <section className="composer-card">
-        <p className="composer-card__placeholder">Ask about this page...</p>
+        <textarea
+          className="composer-input"
+          disabled={!providerSupportsChat || !latestSnapshot}
+          onChange={(event) => setQuestionInput(event.target.value)}
+          onKeyDown={onQuestionInputKeyDown}
+          placeholder="Ask about this page..."
+          rows={4}
+          value={questionInput}
+        />
         <div className="composer-card__footer">
           <p className="helper-text helper-text--tight">
             Source-only answers will use the current page snapshot.
@@ -705,18 +1099,20 @@ function ConfiguredScreen({
           <div className="inline-actions">
             <button
               className="button button--secondary"
-              disabled={isRefreshingContext}
-              onClick={onRefreshContext}
-              type="button"
-            >
-              {isRefreshingContext ? 'Refreshing...' : 'Refresh context'}
-            </button>
-            <button
-              className="button button--secondary"
               onClick={onOpenProviderSettings}
               type="button"
             >
-              Edit setup
+              Setup
+            </button>
+            <button
+              className="button button--primary"
+              disabled={
+                isSubmittingQuestion || !providerSupportsChat || !latestSnapshot
+              }
+              onClick={onAskQuestion}
+              type="button"
+            >
+              {isSubmittingQuestion ? 'Sending...' : 'Send'}
             </button>
           </div>
         </div>

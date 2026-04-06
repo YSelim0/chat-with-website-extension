@@ -1,8 +1,26 @@
-import { savePageSnapshot } from '../src/lib/storage/page-snapshots';
+import {
+  askOpenRouterQuestion,
+  listOpenRouterModels,
+} from '../src/lib/providers/openrouter';
+import {
+  getConversationBySnapshotId,
+  upsertConversationExchange,
+} from '../src/lib/storage/conversations';
+import {
+  getPageSnapshotById,
+  savePageSnapshot,
+} from '../src/lib/storage/page-snapshots';
+import {
+  getExtensionSettings,
+  getProviderConfiguration,
+} from '../src/lib/storage/settings';
+import type { AskQuestionResponse } from '../src/types/chat';
 import type {
   ExtractActivePageResponse,
   ExtractedPagePayload,
 } from '../src/types/page-context';
+import type { ListOpenRouterModelsResponse } from '../src/types/provider-models';
+import type { SupportedProvider } from '../src/types/runtime';
 
 const EXTRACTION_TIMEOUT_MS = 45000;
 const INJECTED_EXTRACTION_WORLD = 'ISOLATED';
@@ -118,12 +136,120 @@ async function requestActivePageExtraction() {
   }
 }
 
+async function askGroundedQuestion({
+  model,
+  provider,
+  question,
+  snapshotId,
+}: {
+  model: string;
+  provider: SupportedProvider;
+  question: string;
+  snapshotId: string;
+}) {
+  const settings = await getExtensionSettings();
+  const providerConfiguration = getProviderConfiguration(settings, provider);
+
+  if (!providerConfiguration?.apiKey) {
+    throw new Error(
+      `No saved API key was found for provider: ${provider}. Re-save the provider setup and try again.`,
+    );
+  }
+
+  const snapshot = await getPageSnapshotById(snapshotId);
+
+  if (!snapshot) {
+    throw new Error('The selected page snapshot could not be found.');
+  }
+
+  const existingConversation = await getConversationBySnapshotId(snapshotId);
+
+  let assistantMessage = '';
+
+  if (provider === 'openrouter') {
+    assistantMessage = await askOpenRouterQuestion({
+      apiKey: providerConfiguration.apiKey,
+      conversationMessages: existingConversation?.messages ?? [],
+      model,
+      snapshot,
+      userQuestion: question,
+    });
+  } else {
+    throw new Error('Grounded chat is currently enabled only for OpenRouter.');
+  }
+
+  return upsertConversationExchange({
+    assistantMessage,
+    model,
+    provider,
+    snapshot,
+    userMessage: question,
+  });
+}
+
 export default defineBackground(() => {
   chrome.runtime.onInstalled.addListener(() => {
     console.info('Chat With Website installed.');
   });
 
   chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+    if (message?.type === 'openrouter:list-models') {
+      void (async () => {
+        try {
+          const models = await listOpenRouterModels();
+
+          const response: ListOpenRouterModelsResponse = {
+            models,
+            ok: true,
+          };
+
+          sendResponse(response);
+        } catch (error) {
+          const response: ListOpenRouterModelsResponse = {
+            error:
+              error instanceof Error
+                ? error.message
+                : 'Failed to load the OpenRouter model list.',
+            ok: false,
+          };
+
+          sendResponse(response);
+        }
+      })();
+
+      return true;
+    }
+
+    if (message?.type === 'chat:ask-question') {
+      void (async () => {
+        try {
+          const result = await askGroundedQuestion(message.payload);
+
+          const response: AskQuestionResponse = {
+            conversation: result.conversation,
+            messages: result.messages,
+            ok: true,
+          };
+
+          sendResponse(response);
+        } catch (error) {
+          console.error('Failed to complete grounded chat request.', error);
+
+          const response: AskQuestionResponse = {
+            ok: false,
+            error:
+              error instanceof Error
+                ? error.message
+                : 'Unknown error while sending the grounded chat request.',
+          };
+
+          sendResponse(response);
+        }
+      })();
+
+      return true;
+    }
+
     if (message?.type !== 'page-context:extract-active-page') {
       return;
     }

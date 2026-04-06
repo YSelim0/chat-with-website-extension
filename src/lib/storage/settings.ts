@@ -2,19 +2,30 @@ import { z } from 'zod';
 
 import type { SupportedProvider } from '../../types/runtime';
 
+const supportedProviderSchema = z.enum([
+  'openai',
+  'gemini',
+  'claude',
+  'groq',
+  'openrouter',
+]);
+
 const providerConfigSchema = z.object({
   apiKey: z.string(),
   defaultModel: z.string().nullable(),
 });
 
+const providerConfigsSchema = z.object({
+  openai: providerConfigSchema.optional(),
+  gemini: providerConfigSchema.optional(),
+  claude: providerConfigSchema.optional(),
+  groq: providerConfigSchema.optional(),
+  openrouter: providerConfigSchema.optional(),
+});
+
 const extensionSettingsSchema = z.object({
-  selectedProvider: z
-    .enum(['openai', 'gemini', 'claude', 'groq', 'openrouter'])
-    .nullable(),
-  providerConfigs: z.record(
-    z.enum(['openai', 'gemini', 'claude', 'groq', 'openrouter']),
-    providerConfigSchema,
-  ),
+  selectedProvider: supportedProviderSchema.nullable(),
+  providerConfigs: providerConfigsSchema,
   hasCompletedOnboarding: z.boolean(),
 });
 
@@ -82,4 +93,11 @@ export function getSavedModelId(
   provider: SupportedProvider,
 ) {
   return settings.providerConfigs[provider]?.defaultModel ?? null;
+}
+
+export function getProviderConfiguration(
+  settings: ExtensionSettings,
+  provider: SupportedProvider,
+) {
+  return settings.providerConfigs[provider] ?? null;
 }
