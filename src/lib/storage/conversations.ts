@@ -3,6 +3,7 @@ import { nanoid } from 'nanoid';
 import type {
   Conversation,
   ConversationMessage,
+  ConversationSummary,
   ConversationWithMessages,
 } from '../../types/chat';
 import type { PageSnapshot } from '../../types/page-context';
@@ -30,6 +31,33 @@ export async function getConversationBySnapshotId(snapshotId: string) {
     conversation: latestConversation,
     messages: latestConversation.messages,
   } satisfies ConversationWithMessages;
+}
+
+export async function getConversationById(conversationId: string) {
+  const conversation =
+    await extensionDatabase.conversations.get(conversationId);
+
+  if (!conversation) {
+    return null;
+  }
+
+  return {
+    conversation,
+    messages: conversation.messages,
+  } satisfies ConversationWithMessages;
+}
+
+export async function listConversationSummaries() {
+  const conversations = await extensionDatabase.conversations.toArray();
+
+  return conversations
+    .map((conversation) => {
+      return {
+        ...conversation,
+        messageCount: conversation.messages.length,
+      } satisfies ConversationSummary;
+    })
+    .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt));
 }
 
 export async function upsertConversationExchange({

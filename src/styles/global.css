@@ -70,6 +70,11 @@ body {
   gap: 16px;
 }
 
+.chat-header-copy {
+  flex: 1;
+  min-width: 0;
+}
+
 .screen-header h1,
 .card h2,
 .subtitle,
@@ -107,6 +112,14 @@ body {
   white-space: nowrap;
 }
 
+.header-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  flex: 0 0 auto;
+}
+
 .eyebrow {
   color: #b0e4cc;
   font-size: 12px;
@@ -119,6 +132,11 @@ body {
   color: #b0e4cc;
   font-size: 14px;
   line-height: 1.5;
+}
+
+.chat-header-copy h1,
+.chat-header-copy .subtitle {
+  overflow-wrap: anywhere;
 }
 
 .card {
@@ -189,6 +207,18 @@ body {
   padding-right: 4px;
 }
 
+.history-list {
+  display: grid;
+  gap: 12px;
+}
+
+.history-list--scrollable {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
 .provider-card {
   display: flex;
   flex-direction: column;
@@ -242,6 +272,11 @@ body {
   background: #b0e4cc;
   font-size: 11px;
   font-weight: 700;
+}
+
+.model-badge--muted {
+  color: #ffffff;
+  background: #408a71;
 }
 
 .model-tools {
@@ -307,6 +342,10 @@ body {
 }
 
 .button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   border: 0;
   border-radius: 16px;
   padding: 13px 16px;
@@ -318,6 +357,13 @@ body {
 .button:disabled {
   opacity: 0.7;
   cursor: default;
+}
+
+.button-icon {
+  width: 14px;
+  height: 14px;
+  object-fit: contain;
+  filter: brightness(0) saturate(100%) invert(100%);
 }
 
 .button--primary {
@@ -452,6 +498,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  min-height: 100%;
 }
 
 .message-bubble {
@@ -499,8 +546,13 @@ body {
   .composer-card__footer,
   .inline-actions,
   .screen-header--chat,
-  .button-row {
+  .button-row,
+  .header-actions {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .chat-header-copy {
+    width: 100%;
   }
 }

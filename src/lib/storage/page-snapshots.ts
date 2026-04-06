@@ -9,7 +9,7 @@ import { chunkPageText } from '../page-context/chunking';
 import { createContentHash } from '../page-context/hash';
 import { extensionDatabase } from './database';
 
-function createSnapshotSummary(snapshot: PageSnapshot): SnapshotSummary {
+export function createSnapshotSummary(snapshot: PageSnapshot): SnapshotSummary {
   return {
     id: snapshot.id,
     chunkCount: snapshot.chunks.length,
@@ -62,4 +62,10 @@ export async function getLatestSnapshotForHostname(hostname: string) {
 
 export async function getPageSnapshotById(snapshotId: string) {
   return extensionDatabase.pageSnapshots.get(snapshotId);
+}
+
+export async function getPageSnapshotSummaryById(snapshotId: string) {
+  const snapshot = await getPageSnapshotById(snapshotId);
+
+  return snapshot ? createSnapshotSummary(snapshot) : null;
 }

@@ -1,4 +1,15 @@
-import { type KeyboardEvent, useEffect, useMemo, useState } from 'react';
+import {
+  type KeyboardEvent,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+
+import editIconUrl from '../assets/icons/edit.svg';
+import historyIconUrl from '../assets/icons/history.svg';
+import refreshIconUrl from '../assets/icons/refresh.svg';
+import sendIconUrl from '../assets/icons/send.svg';
 
 import { getActiveTabHostname } from '../lib/browser/active-tab';
 import {
@@ -7,7 +18,15 @@ import {
   type ModelDefinition,
   PROVIDERS,
 } from '../lib/providers/catalog';
-import { getLatestSnapshotForHostname } from '../lib/storage/page-snapshots';
+import {
+  getConversationById,
+  getConversationBySnapshotId,
+  listConversationSummaries,
+} from '../lib/storage/conversations';
+import {
+  getLatestSnapshotForHostname,
+  getPageSnapshotSummaryById,
+} from '../lib/storage/page-snapshots';
 import {
   type ExtensionSettings,
   getExtensionSettings,
@@ -15,7 +34,12 @@ import {
   getSavedModelId,
   saveProviderConfiguration,
 } from '../lib/storage/settings';
-import type { AskQuestionResponse, ConversationMessage } from '../types/chat';
+import type {
+  AskQuestionResponse,
+  Conversation,
+  ConversationMessage,
+  ConversationSummary,
+} from '../types/chat';
 import type {
   ExtractActivePageResponse,
   SnapshotSummary,
@@ -31,6 +55,8 @@ type PopupScreen =
   | 'model-selection'
   | 'scanning'
   | 'ready';
+
+type ReadyPanel = 'chat' | 'history';
 
 const POPUP_EXTRACTION_TIMEOUT_MS = 50000;
 const MINIMUM_SCANNING_DURATION_MS = 900;
@@ -86,6 +112,12 @@ export function PopupApp() {
   const [latestSnapshot, setLatestSnapshot] = useState<SnapshotSummary | null>(
     null,
   );
+  const [activeSnapshot, setActiveSnapshot] = useState<SnapshotSummary | null>(
+    null,
+  );
+  const [activeConversation, setActiveConversation] =
+    useState<Conversation | null>(null);
+  const [readyPanel, setReadyPanel] = useState<ReadyPanel>('chat');
   const [isSaving, setIsSaving] = useState(false);
   const [isRefreshingContext, setIsRefreshingContext] = useState(false);
   const [isSubmittingQuestion, setIsSubmittingQuestion] = useState(false);
@@ -104,6 +136,9 @@ export function PopupApp() {
   const [visibleModelCount, setVisibleModelCount] = useState(MODEL_PAGE_SIZE);
   const [conversationMessages, setConversationMessages] = useState<
     ConversationMessage[]
+  >([]);
+  const [conversationHistory, setConversationHistory] = useState<
+    ConversationSummary[]
   >([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -170,6 +205,8 @@ export function PopupApp() {
   }, [filteredModels, visibleModelCount]);
 
   const hasMoreModels = filteredModels.length > visibleModels.length;
+  const isUsingLiveSnapshot =
+    Boolean(activeSnapshot?.id) && activeSnapshot?.id === latestSnapshot?.id;
 
   useEffect(() => {
     let isMounted = true;
@@ -195,8 +232,24 @@ export function PopupApp() {
         setApiKeyInput(getSavedApiKey(storedSettings, initialProvider));
         setActiveHostname(hostname);
 
+        const history = await listConversationSummaries();
+        setConversationHistory(history);
+
         if (hostname) {
-          setLatestSnapshot(await getLatestSnapshotForHostname(hostname));
+          const latestSnapshotForHostname =
+            await getLatestSnapshotForHostname(hostname);
+
+          setLatestSnapshot(latestSnapshotForHostname);
+          setActiveSnapshot(latestSnapshotForHostname);
+
+          if (latestSnapshotForHostname) {
+            const existingConversation = await getConversationBySnapshotId(
+              latestSnapshotForHostname.id,
+            );
+
+            setActiveConversation(existingConversation?.conversation ?? null);
+            setConversationMessages(existingConversation?.messages ?? []);
+          }
         }
 
         setScreen(storedSettings.hasCompletedOnboarding ? 'ready' : 'welcome');
@@ -307,6 +360,7 @@ export function PopupApp() {
     setModelSearchQuery('');
     setVisibleModelCount(MODEL_PAGE_SIZE);
     setConversationMessages([]);
+    setActiveConversation(null);
     setErrorMessage(null);
     setScreen('provider-setup');
   }
@@ -384,6 +438,10 @@ export function PopupApp() {
     }
 
     setLatestSnapshot(response.snapshot);
+    setActiveSnapshot(response.snapshot);
+    setActiveConversation(null);
+    setConversationMessages([]);
+    setReadyPanel('chat');
     setScreen('ready');
   }
 
@@ -431,6 +489,7 @@ export function PopupApp() {
     setModelSearchQuery('');
     setVisibleModelCount(MODEL_PAGE_SIZE);
     setConversationMessages([]);
+    setActiveConversation(null);
     setErrorMessage(null);
     setScreen('provider-setup');
   }
@@ -452,7 +511,7 @@ export function PopupApp() {
       return;
     }
 
-    if (!latestSnapshot) {
+    if (!activeSnapshot) {
       setErrorMessage(
         'Scan the page context before asking a grounded question.',
       );
@@ -468,7 +527,7 @@ export function PopupApp() {
           model: selectedModelId,
           provider: selectedProvider,
           question: trimmedQuestion,
-          snapshotId: latestSnapshot.id,
+          snapshotId: activeSnapshot.id,
         },
         type: 'chat:ask-question',
       })) as AskQuestionResponse;
@@ -478,7 +537,9 @@ export function PopupApp() {
         return;
       }
 
+      setActiveConversation(response.conversation);
       setConversationMessages(response.messages);
+      setConversationHistory(await listConversationSummaries());
       setQuestionInput('');
     } catch (error) {
       setErrorMessage(
@@ -505,6 +566,40 @@ export function PopupApp() {
     }
 
     void handleAskQuestion();
+  }
+
+  async function handleOpenConversation(conversationId: string) {
+    const conversation = await getConversationById(conversationId);
+
+    if (!conversation) {
+      setErrorMessage('The selected conversation could not be loaded.');
+      return;
+    }
+
+    const snapshotSummary = await getPageSnapshotSummaryById(
+      conversation.conversation.snapshotId,
+    );
+
+    if (!snapshotSummary) {
+      setErrorMessage(
+        'The selected conversation snapshot could not be loaded.',
+      );
+      return;
+    }
+
+    setActiveConversation(conversation.conversation);
+    setActiveSnapshot(snapshotSummary);
+    setConversationMessages(conversation.messages);
+    setReadyPanel('chat');
+    setErrorMessage(null);
+  }
+
+  function handleOpenHistoryPanel() {
+    setReadyPanel('history');
+  }
+
+  function handleReturnToChatPanel() {
+    setReadyPanel('chat');
   }
 
   if (screen === 'loading') {
@@ -587,19 +682,27 @@ export function PopupApp() {
       {screen === 'ready' && selectedProviderDefinition ? (
         <ConfiguredScreen
           activeHostname={activeHostname}
+          activeConversation={activeConversation}
+          activeSnapshot={activeSnapshot}
+          conversationHistory={conversationHistory}
           conversationMessages={conversationMessages}
           errorMessage={errorMessage}
           isRefreshingContext={isRefreshingContext}
           isSubmittingQuestion={isSubmittingQuestion}
+          isUsingLiveSnapshot={isUsingLiveSnapshot}
           latestSnapshot={latestSnapshot}
           modelLabel={selectedModelDefinition?.label ?? 'No model selected'}
           providerLabel={selectedProviderDefinition.label}
           providerSupportsChat={selectedProvider === 'openrouter'}
           questionInput={questionInput}
+          readyPanel={readyPanel}
           setQuestionInput={setQuestionInput}
+          onOpenConversation={handleOpenConversation}
+          onOpenHistoryPanel={handleOpenHistoryPanel}
           onQuestionInputKeyDown={handleQuestionInputKeyDown}
           onAskQuestion={handleAskQuestion}
           onRefreshContext={handleRefreshContext}
+          onReturnToChatPanel={handleReturnToChatPanel}
           onOpenProviderSettings={handleOpenProviderSettings}
         />
       ) : null}
@@ -972,151 +1075,277 @@ function ScanningScreen({ activeHostname }: { activeHostname: string | null }) {
 
 function ConfiguredScreen({
   activeHostname,
+  activeConversation,
+  activeSnapshot,
+  conversationHistory,
   conversationMessages,
   errorMessage,
   isRefreshingContext,
   isSubmittingQuestion,
+  isUsingLiveSnapshot,
   latestSnapshot,
   modelLabel,
   providerLabel,
   providerSupportsChat,
   questionInput,
+  readyPanel,
   setQuestionInput,
+  onOpenConversation,
+  onOpenHistoryPanel,
   onQuestionInputKeyDown,
   onAskQuestion,
   onRefreshContext,
+  onReturnToChatPanel,
   onOpenProviderSettings,
 }: {
   activeHostname: string | null;
+  activeConversation: Conversation | null;
+  activeSnapshot: SnapshotSummary | null;
+  conversationHistory: ConversationSummary[];
   conversationMessages: ConversationMessage[];
   errorMessage: string | null;
   isRefreshingContext: boolean;
   isSubmittingQuestion: boolean;
+  isUsingLiveSnapshot: boolean;
   latestSnapshot: SnapshotSummary | null;
   modelLabel: string;
   providerLabel: string;
   providerSupportsChat: boolean;
   questionInput: string;
+  readyPanel: ReadyPanel;
   setQuestionInput: (nextValue: string) => void;
+  onOpenConversation: (conversationId: string) => void;
+  onOpenHistoryPanel: () => void;
   onQuestionInputKeyDown: (event: KeyboardEvent<HTMLTextAreaElement>) => void;
   onAskQuestion: () => void;
   onRefreshContext: () => void;
+  onReturnToChatPanel: () => void;
   onOpenProviderSettings: () => void;
 }) {
+  const messageListRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!messageListRef.current) {
+      return;
+    }
+
+    messageListRef.current.scrollTop = messageListRef.current.scrollHeight;
+  });
+
   return (
     <section className="screen-panel screen-panel--chat">
       <header className="screen-header screen-header--chat">
-        <div>
+        <div className="chat-header-copy">
           <h1>Chat on {activeHostname ?? 'this website'}</h1>
           <p className="subtitle">
             Provider configured: {providerLabel}. Default model: {modelLabel}.
           </p>
         </div>
 
-        <div className="status-pill">Setup complete</div>
-      </header>
-
-      <section className="card card--accent-soft snapshot-card">
-        <div className="snapshot-card__header">
-          <h2>Latest page snapshot</h2>
+        <div className="header-actions">
           <button
             className="button button--secondary"
-            disabled={isRefreshingContext}
-            onClick={onRefreshContext}
+            onClick={
+              readyPanel === 'history'
+                ? onReturnToChatPanel
+                : onOpenHistoryPanel
+            }
             type="button"
           >
-            {isRefreshingContext ? 'Refreshing...' : 'Refresh'}
+            <img
+              alt=""
+              aria-hidden="true"
+              className="button-icon"
+              src={historyIconUrl}
+            />
+            {readyPanel === 'history' ? 'Chat' : 'History'}
           </button>
+          <div className="status-pill">Setup complete</div>
         </div>
-        <h2>Latest page snapshot</h2>
-        {latestSnapshot ? (
-          <div className="snapshot-meta">
-            <p className="helper-text helper-text--body">
-              {latestSnapshot.title}
-            </p>
-            <p className="helper-text helper-text--tight">
-              {latestSnapshot.chunkCount} chunks · {latestSnapshot.textLength}{' '}
-              characters
-            </p>
-            <p className="helper-text helper-text--tight">
-              Extracted at{' '}
-              {new Date(latestSnapshot.extractedAt).toLocaleString()}
-            </p>
-          </div>
-        ) : (
-          <p className="helper-text helper-text--body">
-            No saved snapshot yet for {activeHostname ?? 'the current tab'}.
-          </p>
-        )}
+      </header>
 
-        {errorMessage ? <p className="error-text">{errorMessage}</p> : null}
-        {!providerSupportsChat ? (
-          <p className="helper-text helper-text--body">
-            Grounded chat requests are currently enabled only for OpenRouter in
-            this build.
-          </p>
-        ) : null}
-      </section>
+      {readyPanel === 'history' ? (
+        <section className="history-list history-list--scrollable">
+          {conversationHistory.length === 0 ? (
+            <section className="card card--accent-soft">
+              <h2>No conversation history yet</h2>
+              <p className="helper-text helper-text--body">
+                Ask a grounded question and your conversation history will
+                appear here.
+              </p>
+            </section>
+          ) : (
+            conversationHistory.map((conversation) => {
+              const isSelected = activeConversation?.id === conversation.id;
 
-      <section className="chat-card chat-card--scrollable">
-        {conversationMessages.length === 0 ? (
-          <>
-            <p className="chat-card__eyebrow">Assistant</p>
-            <p className="chat-card__body">
-              Ask a question about the current page. Responses will use only the
-              saved snapshot context.
-            </p>
-          </>
-        ) : (
-          <div className="message-list">
-            {conversationMessages.map((message) => (
-              <article
-                className={`message-bubble message-bubble--${message.role}`}
-                key={message.id}
+              return (
+                <button
+                  className={`provider-card${isSelected ? ' provider-card--selected' : ''}`}
+                  key={conversation.id}
+                  onClick={() => onOpenConversation(conversation.id)}
+                  type="button"
+                >
+                  <div className="provider-card__row">
+                    <span className="provider-card__title">
+                      {conversation.title}
+                    </span>
+                    <span className="model-badge model-badge--muted">
+                      {conversation.provider}
+                    </span>
+                  </div>
+                  <span className="provider-card__meta">
+                    {conversation.hostname}
+                  </span>
+                  <span className="provider-card__description">
+                    {conversation.messageCount} messages · {conversation.model}
+                  </span>
+                  <span className="helper-text helper-text--tight">
+                    Updated {new Date(conversation.updatedAt).toLocaleString()}
+                  </span>
+                </button>
+              );
+            })
+          )}
+        </section>
+      ) : (
+        <>
+          <section className="card card--accent-soft snapshot-card">
+            <div className="snapshot-card__header">
+              <div>
+                <h2>Page snapshot</h2>
+                <p className="helper-text helper-text--tight">
+                  {isUsingLiveSnapshot
+                    ? 'Live page context'
+                    : 'Archived snapshot'}
+                </p>
+              </div>
+              <button
+                className="button button--secondary"
+                disabled={isRefreshingContext}
+                onClick={onRefreshContext}
+                type="button"
               >
-                <p className="chat-card__eyebrow">{message.role}</p>
-                <p className="chat-card__body">{message.content}</p>
-              </article>
-            ))}
-          </div>
-        )}
-      </section>
+                <img
+                  alt=""
+                  aria-hidden="true"
+                  className="button-icon"
+                  src={refreshIconUrl}
+                />
+                {isRefreshingContext ? 'Refreshing...' : 'Refresh'}
+              </button>
+            </div>
+            {activeSnapshot ? (
+              <div className="snapshot-meta">
+                <p className="helper-text helper-text--body">
+                  {activeSnapshot.title}
+                </p>
+                <p className="helper-text helper-text--tight">
+                  {activeSnapshot.chunkCount} chunks ·{' '}
+                  {activeSnapshot.textLength} characters
+                </p>
+                <p className="helper-text helper-text--tight">
+                  Extracted at{' '}
+                  {new Date(activeSnapshot.extractedAt).toLocaleString()}
+                </p>
+                {latestSnapshot && !isUsingLiveSnapshot ? (
+                  <p className="helper-text helper-text--tight">
+                    A newer live snapshot exists for {latestSnapshot.hostname}.
+                    Refresh to switch.
+                  </p>
+                ) : null}
+              </div>
+            ) : (
+              <p className="helper-text helper-text--body">
+                No saved snapshot yet for {activeHostname ?? 'the current tab'}.
+              </p>
+            )}
 
-      <section className="composer-card">
-        <textarea
-          className="composer-input"
-          disabled={!providerSupportsChat || !latestSnapshot}
-          onChange={(event) => setQuestionInput(event.target.value)}
-          onKeyDown={onQuestionInputKeyDown}
-          placeholder="Ask about this page..."
-          rows={4}
-          value={questionInput}
-        />
-        <div className="composer-card__footer">
-          <p className="helper-text helper-text--tight">
-            Source-only answers will use the current page snapshot.
-          </p>
-          <div className="inline-actions">
-            <button
-              className="button button--secondary"
-              onClick={onOpenProviderSettings}
-              type="button"
-            >
-              Setup
-            </button>
-            <button
-              className="button button--primary"
-              disabled={
-                isSubmittingQuestion || !providerSupportsChat || !latestSnapshot
-              }
-              onClick={onAskQuestion}
-              type="button"
-            >
-              {isSubmittingQuestion ? 'Sending...' : 'Send'}
-            </button>
-          </div>
-        </div>
-      </section>
+            {errorMessage ? <p className="error-text">{errorMessage}</p> : null}
+            {!providerSupportsChat ? (
+              <p className="helper-text helper-text--body">
+                Grounded chat requests are currently enabled only for OpenRouter
+                in this build.
+              </p>
+            ) : null}
+          </section>
+
+          <section className="chat-card chat-card--scrollable">
+            {conversationMessages.length === 0 ? (
+              <>
+                <p className="chat-card__eyebrow">Assistant</p>
+                <p className="chat-card__body">
+                  Ask a question about the current page. Responses will use only
+                  the saved snapshot context.
+                </p>
+              </>
+            ) : (
+              <div className="message-list" ref={messageListRef}>
+                {conversationMessages.map((message) => (
+                  <article
+                    className={`message-bubble message-bubble--${message.role}`}
+                    key={message.id}
+                  >
+                    <p className="chat-card__eyebrow">{message.role}</p>
+                    <p className="chat-card__body">{message.content}</p>
+                  </article>
+                ))}
+              </div>
+            )}
+          </section>
+
+          <section className="composer-card">
+            <textarea
+              className="composer-input"
+              disabled={!providerSupportsChat || !activeSnapshot}
+              onChange={(event) => setQuestionInput(event.target.value)}
+              onKeyDown={onQuestionInputKeyDown}
+              placeholder="Ask about this page..."
+              rows={4}
+              value={questionInput}
+            />
+            <div className="composer-card__footer">
+              <p className="helper-text helper-text--tight">
+                {activeConversation
+                  ? 'Continuing the selected snapshot conversation.'
+                  : 'Source-only answers will use the active page snapshot.'}
+              </p>
+              <div className="inline-actions">
+                <button
+                  className="button button--secondary"
+                  onClick={onOpenProviderSettings}
+                  type="button"
+                >
+                  <img
+                    alt=""
+                    aria-hidden="true"
+                    className="button-icon"
+                    src={editIconUrl}
+                  />
+                  Setup
+                </button>
+                <button
+                  className="button button--primary"
+                  disabled={
+                    isSubmittingQuestion ||
+                    !providerSupportsChat ||
+                    !activeSnapshot
+                  }
+                  onClick={onAskQuestion}
+                  type="button"
+                >
+                  <img
+                    alt=""
+                    aria-hidden="true"
+                    className="button-icon"
+                    src={sendIconUrl}
+                  />
+                  {isSubmittingQuestion ? 'Sending...' : 'Send'}
+                </button>
+              </div>
+            </div>
+          </section>
+        </>
+      )}
     </section>
   );
 }

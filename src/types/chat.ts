@@ -25,6 +25,10 @@ export type ConversationWithMessages = {
   messages: ConversationMessage[];
 };
 
+export type ConversationSummary = Conversation & {
+  messageCount: number;
+};
+
 export type AskQuestionResponse =
   | {
       ok: true;
