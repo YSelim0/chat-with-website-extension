@@ -99,6 +99,45 @@ function getInitialSelectedModel(
   );
 }
 
+function getSnapshotHelpText(
+  errorMessage: string | null,
+  activeHostname: string | null,
+) {
+  if (errorMessage?.includes('cannot be scanned')) {
+    return 'Open a regular website tab, not a browser-internal page, then try scanning again.';
+  }
+
+  if (errorMessage?.includes('timed out')) {
+    return 'Refresh the current tab or switch to a simpler page, then try scanning again.';
+  }
+
+  if (errorMessage?.includes('Could not reach OpenRouter')) {
+    return 'Check your internet connection before retrying the request.';
+  }
+
+  if (errorMessage?.includes('rate-limited')) {
+    return 'Try again shortly or open Setup to choose another free model.';
+  }
+
+  return `No saved snapshot yet for ${activeHostname ?? 'the current tab'}. Scan the page to start a grounded chat.`;
+}
+
+function getSnapshotAction(errorMessage: string | null) {
+  if (errorMessage?.includes('rate-limited')) {
+    return 'setup' as const;
+  }
+
+  if (
+    errorMessage?.includes('cannot be scanned') ||
+    errorMessage?.includes('timed out') ||
+    errorMessage?.includes('Could not reach OpenRouter')
+  ) {
+    return 'refresh' as const;
+  }
+
+  return null;
+}
+
 export function PopupApp() {
   const [screen, setScreen] = useState<PopupScreen>('loading');
   const [settings, setSettings] = useState<ExtensionSettings | null>(null);
@@ -1052,6 +1091,7 @@ function ConfiguredScreen({
   onOpenProviderSettings: () => void;
 }) {
   const messageListRef = useRef<HTMLDivElement | null>(null);
+  const snapshotAction = getSnapshotAction(errorMessage);
 
   useEffect(() => {
     if (!messageListRef.current) {
@@ -1102,6 +1142,21 @@ function ConfiguredScreen({
                 Ask a grounded question and your conversation history will
                 appear here.
               </p>
+              <div className="empty-state-actions">
+                <button
+                  className="button button--secondary"
+                  onClick={onRefreshContext}
+                  type="button"
+                >
+                  <img
+                    alt=""
+                    aria-hidden="true"
+                    className="button-icon"
+                    src={refreshIconUrl}
+                  />
+                  Refresh
+                </button>
+              </div>
             </section>
           ) : (
             conversationHistory.map((conversation) => {
@@ -1184,9 +1239,60 @@ function ConfiguredScreen({
                 ) : null}
               </div>
             ) : (
-              <p className="helper-text helper-text--body">
-                No saved snapshot yet for {activeHostname ?? 'the current tab'}.
-              </p>
+              <div className="empty-state-block">
+                <p className="helper-text helper-text--body">
+                  {getSnapshotHelpText(errorMessage, activeHostname)}
+                </p>
+                <div className="empty-state-actions">
+                  {snapshotAction === 'refresh' ? (
+                    <button
+                      className="button button--secondary"
+                      disabled={isRefreshingContext}
+                      onClick={onRefreshContext}
+                      type="button"
+                    >
+                      <img
+                        alt=""
+                        aria-hidden="true"
+                        className="button-icon"
+                        src={refreshIconUrl}
+                      />
+                      Retry scan
+                    </button>
+                  ) : null}
+                  {snapshotAction === 'setup' ? (
+                    <button
+                      className="button button--secondary"
+                      onClick={onOpenProviderSettings}
+                      type="button"
+                    >
+                      <img
+                        alt=""
+                        aria-hidden="true"
+                        className="button-icon"
+                        src={editIconUrl}
+                      />
+                      Change model
+                    </button>
+                  ) : null}
+                  {!snapshotAction ? (
+                    <button
+                      className="button button--secondary"
+                      disabled={isRefreshingContext}
+                      onClick={onRefreshContext}
+                      type="button"
+                    >
+                      <img
+                        alt=""
+                        aria-hidden="true"
+                        className="button-icon"
+                        src={refreshIconUrl}
+                      />
+                      Scan page
+                    </button>
+                  ) : null}
+                </div>
+              </div>
             )}
 
             {errorMessage ? <p className="error-text">{errorMessage}</p> : null}
@@ -1194,13 +1300,28 @@ function ConfiguredScreen({
 
           <section className="chat-card chat-card--scrollable">
             {conversationMessages.length === 0 ? (
-              <>
+              <div className="empty-state-block">
                 <p className="chat-card__eyebrow">Assistant</p>
                 <p className="chat-card__body">
                   Ask a question about the current page. Responses will use only
                   the saved snapshot context.
                 </p>
-              </>
+                <div className="empty-state-actions">
+                  <button
+                    className="button button--secondary"
+                    onClick={onOpenHistoryPanel}
+                    type="button"
+                  >
+                    <img
+                      alt=""
+                      aria-hidden="true"
+                      className="button-icon"
+                      src={historyIconUrl}
+                    />
+                    Open history
+                  </button>
+                </div>
+              </div>
             ) : (
               <div className="message-list" ref={messageListRef}>
                 {conversationMessages.map((message) => (

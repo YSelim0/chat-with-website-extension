@@ -111,12 +111,21 @@ function sortModels(left: ProviderModelSummary, right: ProviderModelSummary) {
 }
 
 export async function listOpenRouterModels() {
-  const response = await fetch('https://openrouter.ai/api/v1/models');
+  let response: Response;
+
+  try {
+    response = await fetch('https://openrouter.ai/api/v1/models');
+  } catch {
+    throw new Error(
+      'Could not reach OpenRouter to load models. Check your internet connection and try again.',
+    );
+  }
+
   const responseText = await response.text();
 
   if (!response.ok) {
     throw new Error(
-      `OpenRouter model listing failed with status ${response.status}.`,
+      `OpenRouter model listing failed with status ${response.status}. Try again in a moment.`,
     );
   }
 
@@ -153,9 +162,10 @@ export async function askOpenRouterQuestion({
   snapshot: PageSnapshot;
   userQuestion: string;
 }) {
-  const response = await fetch(
-    'https://openrouter.ai/api/v1/chat/completions',
-    {
+  let response: Response;
+
+  try {
+    response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       body: JSON.stringify({
         messages: buildGroundedMessages(
           snapshot,
@@ -172,8 +182,12 @@ export async function askOpenRouterQuestion({
         'Content-Type': 'application/json',
       },
       method: 'POST',
-    },
-  );
+    });
+  } catch {
+    throw new Error(
+      'Could not reach OpenRouter. Check your internet connection and try again.',
+    );
+  }
 
   const responseText = await response.text();
   const payload = parseResponsePayload(responseText);
@@ -185,6 +199,12 @@ export async function askOpenRouterQuestion({
     const statusPrefix = providerError?.code
       ? `OpenRouter error ${providerError.code}`
       : `OpenRouter error ${response.status}`;
+
+    if ((providerError?.code ?? response.status) === 429) {
+      throw new Error(
+        `${statusPrefix}: ${detailedMessage || 'This model is temporarily rate-limited.'} Try again shortly or choose another free model from Setup.`,
+      );
+    }
 
     throw new Error(
       `${statusPrefix}: ${detailedMessage || 'OpenRouter rejected the grounded chat request.'}`,

@@ -98,7 +98,7 @@ async function requestActivePageExtraction() {
 
   if (!activeTab.url || !isSupportedTabUrl(activeTab.url)) {
     throw new Error(
-      'This page cannot be scanned. Open a regular website tab and try again.',
+      'This page cannot be scanned. Open a regular http or https website tab, refresh it once if needed, and try again.',
     );
   }
 
@@ -108,7 +108,7 @@ async function requestActivePageExtraction() {
         type: 'page-context:extract',
       }),
       EXTRACTION_TIMEOUT_MS,
-      'Page scanning timed out. Please try again on a simpler page or refresh the tab.',
+      'Page scanning timed out. Try again on a simpler page or refresh the current tab before retrying.',
     );
 
     if (!response?.ok) {
@@ -131,7 +131,7 @@ async function requestActivePageExtraction() {
     return withTimeout(
       extractViaInjectedScript(activeTab.id),
       EXTRACTION_TIMEOUT_MS,
-      'Page scanning timed out. Please try again on a simpler page or refresh the tab.',
+      'Page scanning timed out. Try again on a simpler page or refresh the current tab before retrying.',
     );
   }
 }

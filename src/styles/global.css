@@ -476,6 +476,19 @@ body {
   margin-top: 8px;
 }
 
+.empty-state-block {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.empty-state-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
 .inline-actions {
   display: flex;
   flex-wrap: nowrap;
