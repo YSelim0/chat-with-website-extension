@@ -16,7 +16,6 @@ import {
   getDefaultModelForProvider,
   getProviderDefinition,
   type ModelDefinition,
-  PROVIDERS,
 } from '../lib/providers/catalog';
 import {
   getConversationById,
@@ -50,7 +49,6 @@ import type { SupportedProvider } from '../types/runtime';
 type PopupScreen =
   | 'loading'
   | 'welcome'
-  | 'provider-selection'
   | 'provider-setup'
   | 'model-selection'
   | 'scanning'
@@ -346,28 +344,12 @@ export function PopupApp() {
   }, [screen, selectedModelId, selectedProvider]);
 
   function handleContinueFromWelcome() {
-    setScreen('provider-selection');
-  }
-
-  function handleChooseProvider(provider: SupportedProvider) {
-    const savedApiKey = settings ? getSavedApiKey(settings, provider) : '';
-    const savedModelId = settings ? getSavedModelId(settings, provider) : null;
-    const fallbackModel = getDefaultModelForProvider(provider)?.id ?? '';
-
-    setSelectedProvider(provider);
-    setSelectedModelId(savedModelId ?? fallbackModel);
-    setApiKeyInput(savedApiKey);
-    setModelSearchQuery('');
-    setVisibleModelCount(MODEL_PAGE_SIZE);
-    setConversationMessages([]);
-    setActiveConversation(null);
-    setErrorMessage(null);
     setScreen('provider-setup');
   }
 
   function handleBackToProviders() {
     setErrorMessage(null);
-    setScreen('provider-selection');
+    setScreen('welcome');
   }
 
   function handleContinueToModelSelection() {
@@ -622,13 +604,6 @@ export function PopupApp() {
         <WelcomeScreen onContinue={handleContinueFromWelcome} />
       ) : null}
 
-      {screen === 'provider-selection' ? (
-        <ProviderSelectionScreen
-          selectedProvider={selectedProvider}
-          onChooseProvider={handleChooseProvider}
-        />
-      ) : null}
-
       {screen === 'provider-setup' && selectedProviderDefinition ? (
         <ProviderSetupScreen
           apiKeyInput={apiKeyInput}
@@ -716,20 +691,20 @@ function WelcomeScreen({ onContinue }: { onContinue: () => void }) {
       <div className="hero-badge">Website Chat Extension</div>
 
       <header className="screen-header">
-        <h1>Chat with the current website.</h1>
+        <h1>Chat with the current website using OpenRouter.</h1>
         <p className="subtitle">
           Scan the active page, build a page-specific context, and answer only
-          from that context.
+          from that context with your selected OpenRouter model.
         </p>
       </header>
 
       <section className="card card--accent">
         <h2>First launch flow</h2>
         <ol className="step-list">
-          <li>Choose a provider</li>
-          <li>Save your API key locally</li>
+          <li>Connect your OpenRouter API key</li>
           <li>Choose the default model</li>
           <li>Scan the current page</li>
+          <li>Start a grounded chat</li>
         </ol>
       </section>
 
@@ -743,48 +718,8 @@ function WelcomeScreen({ onContinue }: { onContinue: () => void }) {
         </button>
 
         <p className="helper-text">
-          Provider setup is required only once per browser profile.
+          OpenRouter setup is required only once per browser profile.
         </p>
-      </div>
-    </section>
-  );
-}
-
-function ProviderSelectionScreen({
-  selectedProvider,
-  onChooseProvider,
-}: {
-  selectedProvider: SupportedProvider;
-  onChooseProvider: (provider: SupportedProvider) => void;
-}) {
-  return (
-    <section className="screen-panel">
-      <header className="screen-header">
-        <h1>Choose your AI provider</h1>
-        <p className="subtitle">
-          Each provider uses a local API key saved in the extension. OpenRouter
-          is included for multi-model access.
-        </p>
-      </header>
-
-      <div className="provider-grid">
-        {PROVIDERS.map((provider) => {
-          const isSelected = provider.id === selectedProvider;
-
-          return (
-            <button
-              className={`provider-card${isSelected ? ' provider-card--selected' : ''}`}
-              key={provider.id}
-              onClick={() => onChooseProvider(provider.id)}
-              type="button"
-            >
-              <span className="provider-card__title">{provider.label}</span>
-              <span className="provider-card__description">
-                {provider.description}
-              </span>
-            </button>
-          );
-        })}
       </div>
     </section>
   );
@@ -812,10 +747,10 @@ function ProviderSetupScreen({
   return (
     <section className="screen-panel">
       <header className="screen-header">
-        <h1>Connect your provider</h1>
+        <h1>Connect OpenRouter</h1>
         <p className="subtitle">
-          This screen appears only once during initial setup. After saving the
-          key locally, later launches open directly into the configured state.
+          This screen appears only once during initial setup. After saving your
+          OpenRouter key locally, later launches open directly into chat.
         </p>
       </header>
 
@@ -843,8 +778,8 @@ function ProviderSetupScreen({
       <section className="card card--accent-soft">
         <h2>Saved once, reused later</h2>
         <p className="helper-text helper-text--body">
-          Provider keys live in local extension storage on the user&apos;s
-          device. A future settings screen can update or replace them.
+          Your OpenRouter key lives in local extension storage on the
+          user&apos;s device. A future settings screen can update or replace it.
         </p>
       </section>
 
@@ -908,8 +843,8 @@ function ModelSelectionScreen({
       <header className="screen-header">
         <h1>Choose a default model</h1>
         <p className="subtitle">
-          One {providerLabel} key can expose multiple models. Pick the default
-          model for new conversations, then change it later from settings.
+          Your {providerLabel} account can expose many models. Pick the default
+          one for new conversations, then change it later from settings.
         </p>
       </header>
 
