@@ -92,8 +92,8 @@ The popup should follow a clear state-driven flow:
 
 - first-run welcome
 - provider selection
-- model selection for the chosen provider
 - one-time API key setup
+- model selection for the chosen provider
 - transient scanning state while preparing page context
 - main chat view
 - history view with archived snapshot labeling

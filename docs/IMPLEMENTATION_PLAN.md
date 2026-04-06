@@ -38,8 +38,8 @@ Build the first-launch setup flow and allow users to configure one provider acco
 
 - Onboarding UI in the popup
 - Provider selection screen
-- Model selection step for the chosen provider
 - API key input and validation flow
+- Model selection step for the chosen provider
 - Local persistence of provider settings
 - Local persistence of default model selection per provider
 - Support list covering OpenAI, Gemini, Claude, Groq, and OpenRouter

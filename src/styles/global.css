@@ -267,6 +267,10 @@ body {
   border: 1px solid #285a48;
 }
 
+.button-row .button {
+  flex: 1;
+}
+
 .status-card,
 .chat-card,
 .composer-card {
