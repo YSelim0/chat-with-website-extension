@@ -317,6 +317,19 @@ body {
   align-items: center;
 }
 
+.snapshot-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.inline-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
 .progress-track {
   width: 100%;
   height: 12px;
@@ -343,6 +356,7 @@ body {
   }
 
   .composer-card__footer,
+  .inline-actions,
   .screen-header--chat,
   .button-row {
     flex-direction: column;

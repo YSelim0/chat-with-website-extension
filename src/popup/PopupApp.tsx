@@ -7,6 +7,7 @@ import {
   type ModelDefinition,
   PROVIDERS,
 } from '../lib/providers/catalog';
+import { getLatestSnapshotForHostname } from '../lib/storage/page-snapshots';
 import {
   type ExtensionSettings,
   getExtensionSettings,
@@ -14,6 +15,10 @@ import {
   getSavedModelId,
   saveProviderConfiguration,
 } from '../lib/storage/settings';
+import type {
+  ExtractActivePageResponse,
+  SnapshotSummary,
+} from '../types/page-context';
 import type { SupportedProvider } from '../types/runtime';
 
 type PopupScreen =
@@ -24,6 +29,31 @@ type PopupScreen =
   | 'model-selection'
   | 'scanning'
   | 'ready';
+
+const POPUP_EXTRACTION_TIMEOUT_MS = 50000;
+const MINIMUM_SCANNING_DURATION_MS = 900;
+
+function withTimeout<T>(
+  promise: Promise<T>,
+  timeoutMs: number,
+  message: string,
+) {
+  return new Promise<T>((resolve, reject) => {
+    const timeoutId = window.setTimeout(() => {
+      reject(new Error(message));
+    }, timeoutMs);
+
+    promise
+      .then((value) => {
+        window.clearTimeout(timeoutId);
+        resolve(value);
+      })
+      .catch((error) => {
+        window.clearTimeout(timeoutId);
+        reject(error);
+      });
+  });
+}
 
 function getInitialSelectedProvider(
   settings: ExtensionSettings,
@@ -50,7 +80,11 @@ export function PopupApp() {
   const [selectedModelId, setSelectedModelId] = useState('');
   const [apiKeyInput, setApiKeyInput] = useState('');
   const [activeHostname, setActiveHostname] = useState<string | null>(null);
+  const [latestSnapshot, setLatestSnapshot] = useState<SnapshotSummary | null>(
+    null,
+  );
   const [isSaving, setIsSaving] = useState(false);
+  const [isRefreshingContext, setIsRefreshingContext] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const selectedProviderDefinition = useMemo(() => {
@@ -86,6 +120,11 @@ export function PopupApp() {
         );
         setApiKeyInput(getSavedApiKey(storedSettings, initialProvider));
         setActiveHostname(hostname);
+
+        if (hostname) {
+          setLatestSnapshot(await getLatestSnapshotForHostname(hostname));
+        }
+
         setScreen(storedSettings.hasCompletedOnboarding ? 'ready' : 'welcome');
       } catch (error) {
         console.error('Failed to initialize popup state.', error);
@@ -146,6 +185,60 @@ export function PopupApp() {
     setScreen('provider-setup');
   }
 
+  async function runActivePageExtraction() {
+    const startedAt = Date.now();
+
+    setScreen('scanning');
+    setErrorMessage(null);
+
+    let response: ExtractActivePageResponse;
+
+    try {
+      response = (await withTimeout(
+        chrome.runtime.sendMessage({
+          type: 'page-context:extract-active-page',
+        }),
+        POPUP_EXTRACTION_TIMEOUT_MS,
+        'Scanning took too long. Please refresh the tab and try again.',
+      )) as ExtractActivePageResponse;
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : 'Scanning failed before the page context was returned.',
+      );
+      setScreen('ready');
+      return;
+    }
+
+    if (!response.ok) {
+      const remainingDelay =
+        MINIMUM_SCANNING_DURATION_MS - (Date.now() - startedAt);
+
+      if (remainingDelay > 0) {
+        await new Promise((resolve) => {
+          window.setTimeout(resolve, remainingDelay);
+        });
+      }
+
+      setErrorMessage(response.error);
+      setScreen('ready');
+      return;
+    }
+
+    const remainingDelay =
+      MINIMUM_SCANNING_DURATION_MS - (Date.now() - startedAt);
+
+    if (remainingDelay > 0) {
+      await new Promise((resolve) => {
+        window.setTimeout(resolve, remainingDelay);
+      });
+    }
+
+    setLatestSnapshot(response.snapshot);
+    setScreen('ready');
+  }
+
   async function handleSaveProviderConfiguration() {
     const trimmedApiKey = apiKeyInput.trim();
 
@@ -171,11 +264,7 @@ export function PopupApp() {
       );
 
       setSettings(nextSettings);
-      setScreen('scanning');
-
-      window.setTimeout(() => {
-        setScreen('ready');
-      }, 1200);
+      await runActivePageExtraction();
     } catch (error) {
       console.error('Failed to save provider configuration.', error);
       setErrorMessage('Failed to save the provider configuration locally.');
@@ -193,6 +282,15 @@ export function PopupApp() {
     );
     setErrorMessage(null);
     setScreen('provider-setup');
+  }
+
+  async function handleRefreshContext() {
+    try {
+      setIsRefreshingContext(true);
+      await runActivePageExtraction();
+    } finally {
+      setIsRefreshingContext(false);
+    }
   }
 
   if (screen === 'loading') {
@@ -255,8 +353,12 @@ export function PopupApp() {
       {screen === 'ready' && selectedProviderDefinition ? (
         <ConfiguredScreen
           activeHostname={activeHostname}
+          errorMessage={errorMessage}
+          isRefreshingContext={isRefreshingContext}
+          latestSnapshot={latestSnapshot}
           modelLabel={selectedModelDefinition?.label ?? 'No model selected'}
           providerLabel={selectedProviderDefinition.label}
+          onRefreshContext={handleRefreshContext}
           onOpenProviderSettings={handleOpenProviderSettings}
         />
       ) : null}
@@ -521,7 +623,7 @@ function ScanningScreen({ activeHostname }: { activeHostname: string | null }) {
         <h2>Progress</h2>
         <p className="helper-text helper-text--body">
           Step 1 of 2. Next, the popup will open into the configured shell while
-          grounded chat features are completed in the next phase.
+          the extracted page snapshot becomes available for the next chat phase.
         </p>
       </section>
     </section>
@@ -530,13 +632,21 @@ function ScanningScreen({ activeHostname }: { activeHostname: string | null }) {
 
 function ConfiguredScreen({
   activeHostname,
+  errorMessage,
+  isRefreshingContext,
+  latestSnapshot,
   modelLabel,
   providerLabel,
+  onRefreshContext,
   onOpenProviderSettings,
 }: {
   activeHostname: string | null;
+  errorMessage: string | null;
+  isRefreshingContext: boolean;
+  latestSnapshot: SnapshotSummary | null;
   modelLabel: string;
   providerLabel: string;
+  onRefreshContext: () => void;
   onOpenProviderSettings: () => void;
 }) {
   return (
@@ -556,8 +666,34 @@ function ConfiguredScreen({
         <p className="chat-card__eyebrow">Assistant</p>
         <p className="chat-card__body">
           The provider and default model are configured locally. The next phase
-          will wire the popup to active page extraction and snapshot-based chat.
+          will wire the popup to snapshot-based grounded chat on extracted page
+          content.
         </p>
+      </section>
+
+      <section className="card card--accent-soft">
+        <h2>Latest page snapshot</h2>
+        {latestSnapshot ? (
+          <div className="snapshot-meta">
+            <p className="helper-text helper-text--body">
+              {latestSnapshot.title}
+            </p>
+            <p className="helper-text helper-text--tight">
+              {latestSnapshot.chunkCount} chunks · {latestSnapshot.textLength}{' '}
+              characters
+            </p>
+            <p className="helper-text helper-text--tight">
+              Extracted at{' '}
+              {new Date(latestSnapshot.extractedAt).toLocaleString()}
+            </p>
+          </div>
+        ) : (
+          <p className="helper-text helper-text--body">
+            No saved snapshot yet for {activeHostname ?? 'the current tab'}.
+          </p>
+        )}
+
+        {errorMessage ? <p className="error-text">{errorMessage}</p> : null}
       </section>
 
       <section className="composer-card">
@@ -566,13 +702,23 @@ function ConfiguredScreen({
           <p className="helper-text helper-text--tight">
             Source-only answers will use the current page snapshot.
           </p>
-          <button
-            className="button button--secondary"
-            onClick={onOpenProviderSettings}
-            type="button"
-          >
-            Edit setup
-          </button>
+          <div className="inline-actions">
+            <button
+              className="button button--secondary"
+              disabled={isRefreshingContext}
+              onClick={onRefreshContext}
+              type="button"
+            >
+              {isRefreshingContext ? 'Refreshing...' : 'Refresh context'}
+            </button>
+            <button
+              className="button button--secondary"
+              onClick={onOpenProviderSettings}
+              type="button"
+            >
+              Edit setup
+            </button>
+          </div>
         </div>
       </section>
     </section>
