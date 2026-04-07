@@ -20,12 +20,6 @@ export default defineConfig({
       128: 'icons/app_logo.png',
     },
     permissions: ['storage', 'activeTab', 'scripting'],
-    host_permissions: [
-      'https://api.openai.com/*',
-      'https://api.groq.com/*',
-      'https://api.anthropic.com/*',
-      'https://openrouter.ai/*',
-      'https://generativelanguage.googleapis.com/*',
-    ],
+    host_permissions: ['https://openrouter.ai/*'],
   },
 });
