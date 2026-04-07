@@ -6,12 +6,1268 @@
       "id": "bi8Au",
       "x": 0,
       "y": 0,
-      "name": "Frame",
+      "name": "UI Canvas",
       "clip": true,
-      "width": 800,
-      "height": 600,
-      "fill": "#FFFFFF",
-      "layout": "none"
+      "width": 3080,
+      "height": 1380,
+      "fill": "#091413",
+      "layout": "none",
+      "children": [
+        {
+          "type": "frame",
+          "id": "F2blm",
+          "x": 80,
+          "y": 80,
+          "name": "Welcome",
+          "width": 360,
+          "height": 720,
+          "fill": "#091413",
+          "cornerRadius": 28,
+          "stroke": {
+            "thickness": 1,
+            "fill": "#285A48"
+          },
+          "layout": "vertical",
+          "gap": 20,
+          "padding": 28,
+          "children": [
+            {
+              "type": "frame",
+              "id": "PNfXK",
+              "name": "heroBadge",
+              "fill": "#285A48",
+              "cornerRadius": 999,
+              "padding": [
+                8,
+                12
+              ],
+              "children": [
+                {
+                  "type": "text",
+                  "id": "OKBuw",
+                  "fill": "#B0E4CC",
+                  "content": "Website Chat Extension",
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "700"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "id": "Z6ehK",
+              "fill": "#FFFFFF",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "Chat with the current website.",
+              "lineHeight": 1.15,
+              "fontFamily": "Inter",
+              "fontSize": 32,
+              "fontWeight": "700"
+            },
+            {
+              "type": "text",
+              "id": "ON7sT",
+              "fill": "#B0E4CC",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "Scan the active page, build a page-specific context, and answer only from that context using your chosen AI provider.",
+              "lineHeight": 1.5,
+              "fontFamily": "Inter",
+              "fontSize": 15,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "frame",
+              "id": "SMSxX",
+              "name": "welcomePanel",
+              "width": "fill_container",
+              "fill": "#285A48",
+              "cornerRadius": 20,
+              "layout": "vertical",
+              "gap": 12,
+              "padding": 18,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "EZtFP",
+                  "fill": "#FFFFFF",
+                  "content": "First launch flow",
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "text",
+                  "id": "liNAU",
+                  "fill": "#B0E4CC",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "1. Choose a provider\n2. Save your API key locally\n3. Scan the page\n4. Start a grounded conversation",
+                  "lineHeight": 1.6,
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "8FjnC",
+              "name": "welcomeFooter",
+              "width": "fill_container",
+              "height": "fill_container",
+              "layout": "vertical",
+              "gap": 12,
+              "justifyContent": "end",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "Qfy6s",
+                  "name": "startButton",
+                  "width": "fill_container",
+                  "fill": "#408A71",
+                  "cornerRadius": 16,
+                  "padding": [
+                    14,
+                    16
+                  ],
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "pzHBW",
+                      "fill": "#FFFFFF",
+                      "content": "Get Started",
+                      "fontFamily": "Inter",
+                      "fontSize": 15,
+                      "fontWeight": "700"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "srCTx",
+                  "fill": "#B0E4CC",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Provider setup is required only once per browser profile.",
+                  "lineHeight": 1.4,
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "rNUGr",
+          "x": 500,
+          "y": 80,
+          "name": "Provider Selection",
+          "width": 360,
+          "height": 720,
+          "fill": "#091413",
+          "cornerRadius": 28,
+          "stroke": {
+            "thickness": 1,
+            "fill": "#285A48"
+          },
+          "layout": "vertical",
+          "gap": 18,
+          "padding": 28,
+          "children": [
+            {
+              "type": "text",
+              "id": "Nkleh",
+              "fill": "#FFFFFF",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "Choose your AI provider",
+              "lineHeight": 1.15,
+              "fontFamily": "Inter",
+              "fontSize": 28,
+              "fontWeight": "700"
+            },
+            {
+              "type": "text",
+              "id": "1eesz",
+              "fill": "#B0E4CC",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "Each provider uses a local API key saved in the extension. OpenRouter is included for multi-model access.",
+              "lineHeight": 1.5,
+              "fontFamily": "Inter",
+              "fontSize": 14,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "frame",
+              "id": "IPt0U",
+              "name": "pList",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 12,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "o3zNm",
+                  "name": "openai",
+                  "width": "fill_container",
+                  "fill": "#285A48",
+                  "cornerRadius": 18,
+                  "stroke": {
+                    "thickness": 1,
+                    "fill": "#B0E4CC"
+                  },
+                  "layout": "vertical",
+                  "gap": 6,
+                  "padding": 16,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "hoxEL",
+                      "fill": "#FFFFFF",
+                      "content": "OpenAI",
+                      "fontFamily": "Inter",
+                      "fontSize": 16,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "uiHEo",
+                      "fill": "#B0E4CC",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "Best for general grounded chat.",
+                      "lineHeight": 1.4,
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "TGdz3",
+                  "name": "gemini",
+                  "width": "fill_container",
+                  "fill": "#285A48",
+                  "cornerRadius": 18,
+                  "layout": "vertical",
+                  "gap": 6,
+                  "padding": 16,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "00jJz",
+                      "fill": "#FFFFFF",
+                      "content": "Gemini, Claude, Groq, OpenRouter",
+                      "fontFamily": "Inter",
+                      "fontSize": 15,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "XGbXn",
+                      "fill": "#B0E4CC",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "Additional providers appear as selectable cards in the final popup flow.",
+                      "lineHeight": 1.4,
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "XoDQC",
+                  "name": "extraProviders",
+                  "width": "fill_container",
+                  "fill": "#285A48",
+                  "cornerRadius": 18,
+                  "layout": "vertical",
+                  "gap": 8,
+                  "padding": 16,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "gnIFm",
+                      "fill": "#FFFFFF",
+                      "content": "Gemini · Claude · Groq · OpenRouter",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "xyOKn",
+                      "fill": "#B0E4CC",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "The setup flow will show one provider per card, but this compact mock keeps the screen readable.",
+                      "lineHeight": 1.45,
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "4tEil",
+          "x": 920,
+          "y": 80,
+          "name": "API Key Setup",
+          "width": 360,
+          "height": 720,
+          "fill": "#091413",
+          "cornerRadius": 28,
+          "stroke": {
+            "thickness": 1,
+            "fill": "#285A48"
+          },
+          "layout": "vertical",
+          "gap": 18,
+          "padding": 28,
+          "children": [
+            {
+              "type": "text",
+              "id": "Q5aox",
+              "fill": "#FFFFFF",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "Connect your provider",
+              "lineHeight": 1.15,
+              "fontFamily": "Inter",
+              "fontSize": 28,
+              "fontWeight": "700"
+            },
+            {
+              "type": "text",
+              "id": "5ZJMJ",
+              "fill": "#B0E4CC",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "This screen appears only once during initial setup. After saving the key locally, later launches open directly into chat.",
+              "lineHeight": 1.5,
+              "fontFamily": "Inter",
+              "fontSize": 14,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "frame",
+              "id": "yNV5h",
+              "name": "formCard",
+              "width": "fill_container",
+              "fill": "#285A48",
+              "cornerRadius": 20,
+              "layout": "vertical",
+              "gap": 12,
+              "padding": 18,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "3973M",
+                  "fill": "#FFFFFF",
+                  "content": "OpenRouter API Key",
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "frame",
+                  "id": "Db3E6",
+                  "name": "inputShell",
+                  "width": "fill_container",
+                  "fill": "#091413",
+                  "cornerRadius": 14,
+                  "stroke": {
+                    "thickness": 1,
+                    "fill": "#B0E4CC"
+                  },
+                  "padding": [
+                    14,
+                    16
+                  ],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "SgPd3",
+                      "fill": "#B0E4CC",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "sk-or-v1-••••••••••••••••",
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "ZVOmY",
+                  "fill": "#B0E4CC",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "You can switch to OpenAI, Gemini, Claude, or Groq later from settings.",
+                  "lineHeight": 1.4,
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "XaBfA",
+              "name": "saveButton",
+              "width": "fill_container",
+              "fill": "#408A71",
+              "cornerRadius": 16,
+              "padding": [
+                14,
+                16
+              ],
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "ftNfU",
+                  "fill": "#FFFFFF",
+                  "content": "Save and Continue",
+                  "fontFamily": "Inter",
+                  "fontSize": 15,
+                  "fontWeight": "700"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "Sx4WB",
+              "x": 28,
+              "y": 428,
+              "name": "scanCard",
+              "enabled": false,
+              "width": 304,
+              "fill": "#0B1327",
+              "cornerRadius": 20,
+              "stroke": {
+                "thickness": 1,
+                "fill": "#1E293B"
+              },
+              "layout": "vertical",
+              "gap": 10,
+              "padding": 18,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "Gz4m5",
+                  "fill": "#E2E8F0",
+                  "content": "Scanning current page",
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "text",
+                  "id": "RxFa5",
+                  "fill": "#60A5FA",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "example.com/docs/product-overview",
+                  "lineHeight": 1.4,
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "frame",
+                  "id": "Y0iKs",
+                  "name": "progressTrack",
+                  "width": "fill_container",
+                  "height": 10,
+                  "fill": "#1E293B",
+                  "cornerRadius": 999,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "HhoAl",
+                      "width": 220,
+                      "height": "fill_container",
+                      "fill": "#38BDF8",
+                      "cornerRadius": 999
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "M3C4m",
+                  "fill": "#94A3B8",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Extracting headings, body text, and chunk metadata for retrieval.",
+                  "lineHeight": 1.4,
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "rJfxJ",
+              "name": "setupHint",
+              "width": "fill_container",
+              "fill": "#285A48",
+              "cornerRadius": 18,
+              "layout": "vertical",
+              "gap": 10,
+              "padding": 16,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "3EmlO",
+                  "fill": "#FFFFFF",
+                  "content": "Saved once, reused later",
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "text",
+                  "id": "xFPea",
+                  "fill": "#B0E4CC",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Provider keys live in local extension storage on the user's device. A future settings screen can update or replace them.",
+                  "lineHeight": 1.45,
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "XP4rI",
+          "x": 2180,
+          "y": 80,
+          "name": "Main Chat",
+          "width": 420,
+          "height": 940,
+          "fill": "#091413",
+          "cornerRadius": 28,
+          "stroke": {
+            "thickness": 1,
+            "fill": "#285A48"
+          },
+          "layout": "vertical",
+          "gap": 18,
+          "padding": 24,
+          "children": [
+            {
+              "type": "frame",
+              "id": "90veU",
+              "name": "chatHeader",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 10,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "YB2OQ",
+                  "fill": "#FFFFFF",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Chat on example.com",
+                  "lineHeight": 1.15,
+                  "fontFamily": "Inter",
+                  "fontSize": 28,
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "frame",
+                  "id": "KMglx",
+                  "name": "statusRow",
+                  "width": "fill_container",
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "pL4D4",
+                      "name": "statusBadge",
+                      "fill": "#285A48",
+                      "cornerRadius": 999,
+                      "padding": [
+                        8,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "ohVSh",
+                          "fill": "#B0E4CC",
+                          "content": "Live page context",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "700"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "1CNeN",
+                      "fill": "#B0E4CC",
+                      "content": "Refresh context",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "700"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "MByHB",
+              "name": "chatStream",
+              "width": "fill_container",
+              "height": "fill_container",
+              "layout": "vertical",
+              "gap": 14,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "c5fYs",
+                  "name": "assistantCard",
+                  "width": "fill_container",
+                  "fill": "#285A48",
+                  "cornerRadius": 18,
+                  "layout": "vertical",
+                  "gap": 8,
+                  "padding": 16,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "dcCKt",
+                      "fill": "#B0E4CC",
+                      "content": "Assistant",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "69xsy",
+                      "fill": "#FFFFFF",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "I can answer questions only from the scanned website context. If a fact is not present on the page, I will say that it is unavailable.",
+                      "lineHeight": 1.5,
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "2DgkD",
+                  "name": "userCard",
+                  "width": "fill_container",
+                  "fill": "#408A71",
+                  "cornerRadius": 18,
+                  "layout": "vertical",
+                  "gap": 8,
+                  "padding": 16,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "WNaIx",
+                      "fill": "#FFFFFF",
+                      "content": "User",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "laZ8t",
+                      "fill": "#FFFFFF",
+                      "content": "Summarize the pricing section.",
+                      "lineHeight": 1.5,
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "bXy9D",
+              "name": "composer",
+              "width": "fill_container",
+              "fill": "#285A48",
+              "cornerRadius": 20,
+              "stroke": {
+                "thickness": 1,
+                "fill": "#B0E4CC"
+              },
+              "layout": "vertical",
+              "gap": 12,
+              "padding": 16,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "OYIyI",
+                  "fill": "#B0E4CC",
+                  "content": "Ask about this page...",
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "frame",
+                  "id": "9crBe",
+                  "name": "sendRow",
+                  "width": "fill_container",
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "ysrCh",
+                      "fill": "#B0E4CC",
+                      "content": "Sources from current snapshot only",
+                      "lineHeight": 1.4,
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "b9x2y",
+                      "name": "sendButton",
+                      "fill": "#091413",
+                      "cornerRadius": 14,
+                      "padding": [
+                        10,
+                        14
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "VzYTo",
+                          "fill": "#FFFFFF",
+                          "content": "Send",
+                          "fontFamily": "Inter",
+                          "fontSize": 13,
+                          "fontWeight": "700"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "6IwXs",
+          "x": 2660,
+          "y": 80,
+          "name": "History",
+          "width": 320,
+          "height": 940,
+          "fill": "#091413",
+          "cornerRadius": 28,
+          "stroke": {
+            "thickness": 1,
+            "fill": "#285A48"
+          },
+          "layout": "vertical",
+          "gap": 18,
+          "padding": 24,
+          "children": [
+            {
+              "type": "text",
+              "id": "vkSev",
+              "fill": "#FFFFFF",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "Conversation History",
+              "lineHeight": 1.15,
+              "fontFamily": "Inter",
+              "fontSize": 24,
+              "fontWeight": "700"
+            },
+            {
+              "type": "frame",
+              "id": "NfNuo",
+              "name": "siteGroup",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 12,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "jyrVG",
+                  "name": "recentCard",
+                  "width": "fill_container",
+                  "fill": "#285A48",
+                  "cornerRadius": 18,
+                  "stroke": {
+                    "thickness": 1,
+                    "fill": "#B0E4CC"
+                  },
+                  "layout": "vertical",
+                  "gap": 8,
+                  "padding": 16,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "M0Ogx",
+                      "fill": "#FFFFFF",
+                      "content": "example.com",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "n8KPf",
+                      "fill": "#B0E4CC",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "Archived snapshot · 2 messages · OpenRouter",
+                      "lineHeight": 1.4,
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "cl2gY",
+                  "name": "olderCard",
+                  "width": "fill_container",
+                  "fill": "#285A48",
+                  "cornerRadius": 18,
+                  "layout": "vertical",
+                  "gap": 8,
+                  "padding": 16,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "HNWeG",
+                      "fill": "#FFFFFF",
+                      "content": "docs.vendor.dev",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "oiMkx",
+                      "fill": "#B0E4CC",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "Live page context available · 6 messages · OpenAI",
+                      "lineHeight": 1.4,
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "id": "IKcxN",
+              "fill": "#B0E4CC",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "Opening a previous conversation restores the stored page snapshot so responses stay tied to the original website content.",
+              "lineHeight": 1.5,
+              "fontFamily": "Inter",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "kqoIa",
+          "x": 1760,
+          "y": 80,
+          "name": "Scanning",
+          "width": 360,
+          "height": 720,
+          "fill": "#091413",
+          "cornerRadius": 28,
+          "stroke": {
+            "thickness": 1,
+            "fill": "#285A48"
+          },
+          "layout": "vertical",
+          "gap": 18,
+          "padding": 28,
+          "children": [
+            {
+              "type": "text",
+              "id": "TvLCq",
+              "fill": "#FFFFFF",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "Scanning the active page",
+              "lineHeight": 1.15,
+              "fontFamily": "Inter",
+              "fontSize": 28,
+              "fontWeight": "700"
+            },
+            {
+              "type": "text",
+              "id": "fRH1d",
+              "fill": "#B0E4CC",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "This is a short-lived loading state shown after setup or when the user refreshes context from chat.",
+              "lineHeight": 1.5,
+              "fontFamily": "Inter",
+              "fontSize": 14,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "frame",
+              "id": "FsKbb",
+              "name": "scanHero",
+              "width": "fill_container",
+              "fill": "#285A48",
+              "cornerRadius": 20,
+              "layout": "vertical",
+              "gap": 12,
+              "padding": 18,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "rlNJa",
+                  "fill": "#FFFFFF",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "example.com/docs/product-overview",
+                  "lineHeight": 1.35,
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "text",
+                  "id": "fs5Dr",
+                  "fill": "#B0E4CC",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Collecting readable content, section headings, and chunk metadata for retrieval.",
+                  "lineHeight": 1.45,
+                  "fontFamily": "Inter",
+                  "fontSize": 13,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "frame",
+                  "id": "Ic8BD",
+                  "name": "track",
+                  "width": "fill_container",
+                  "height": 12,
+                  "fill": "#091413",
+                  "cornerRadius": 999,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "OKoiq",
+                      "width": 210,
+                      "height": "fill_container",
+                      "fill": "#B0E4CC",
+                      "cornerRadius": 999
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "aO23O",
+              "name": "scanMeta",
+              "width": "fill_container",
+              "fill": "#285A48",
+              "cornerRadius": 18,
+              "layout": "vertical",
+              "gap": 10,
+              "padding": 16,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "jR6MX",
+                  "fill": "#FFFFFF",
+                  "content": "Progress",
+                  "fontFamily": "Inter",
+                  "fontSize": 13,
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "text",
+                  "id": "lEupW",
+                  "fill": "#B0E4CC",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Step 1 of 2 · extraction in progress\nNext: open grounded chat with the new snapshot",
+                  "lineHeight": 1.5,
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "TFIMS",
+          "x": 1340,
+          "y": 80,
+          "name": "Model Selection",
+          "width": 360,
+          "height": 720,
+          "fill": "#091413",
+          "cornerRadius": 28,
+          "stroke": {
+            "thickness": 1,
+            "fill": "#285A48"
+          },
+          "layout": "vertical",
+          "gap": 18,
+          "padding": 28,
+          "children": [
+            {
+              "type": "text",
+              "id": "rbfJ1",
+              "fill": "#FFFFFF",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "Choose a default model",
+              "lineHeight": 1.15,
+              "fontFamily": "Inter",
+              "fontSize": 28,
+              "fontWeight": "700"
+            },
+            {
+              "type": "text",
+              "id": "6utem",
+              "fill": "#B0E4CC",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "One provider key can expose multiple models. Pick the default model for new conversations, then change it later from settings.",
+              "lineHeight": 1.5,
+              "fontFamily": "Inter",
+              "fontSize": 14,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "frame",
+              "id": "5chlz",
+              "name": "modelList",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 12,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "Ph474",
+                  "name": "primaryModel",
+                  "width": "fill_container",
+                  "fill": "#408A71",
+                  "cornerRadius": 18,
+                  "stroke": {
+                    "thickness": 1,
+                    "fill": "#B0E4CC"
+                  },
+                  "layout": "vertical",
+                  "gap": 6,
+                  "padding": 16,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "vg2dL",
+                      "fill": "#FFFFFF",
+                      "content": "qwen/qwen3-coder",
+                      "fontFamily": "Inter",
+                      "fontSize": 15,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "qdCbd",
+                      "fill": "#FFFFFF",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "Selected default model for grounded site Q&A and long-form answers.",
+                      "lineHeight": 1.45,
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "KR2oU",
+                  "name": "altModel",
+                  "width": "fill_container",
+                  "fill": "#285A48",
+                  "cornerRadius": 18,
+                  "layout": "vertical",
+                  "gap": 6,
+                  "padding": 16,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "XaDpj",
+                      "fill": "#FFFFFF",
+                      "content": "openai/gpt-4.1-mini",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "2FQ5p",
+                      "fill": "#B0E4CC",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "A faster fallback model for lighter page summaries.",
+                      "lineHeight": 1.45,
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "TesTD",
+              "name": "moreModels",
+              "width": "fill_container",
+              "fill": "#285A48",
+              "cornerRadius": 18,
+              "layout": "vertical",
+              "gap": 10,
+              "padding": 16,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "KdlpV",
+                  "fill": "#FFFFFF",
+                  "content": "Model list behavior",
+                  "fontFamily": "Inter",
+                  "fontSize": 13,
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "text",
+                  "id": "oQC1z",
+                  "fill": "#B0E4CC",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "If the provider supports model listing, fetch it dynamically. Otherwise show a safe fallback catalog.",
+                  "lineHeight": 1.45,
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "nJ9Tj",
+              "name": "ctaRow",
+              "width": "fill_container",
+              "gap": 10,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "UbENI",
+                  "name": "backBtn",
+                  "width": "fill_container",
+                  "fill": "#285A48",
+                  "cornerRadius": 16,
+                  "padding": [
+                    14,
+                    16
+                  ],
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "B0Klp",
+                      "fill": "#FFFFFF",
+                      "content": "Back",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "700"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "0vCwH",
+                  "name": "continueBtn",
+                  "width": "fill_container",
+                  "fill": "#408A71",
+                  "cornerRadius": 16,
+                  "padding": [
+                    14,
+                    16
+                  ],
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "r1Bt0",
+                      "fill": "#FFFFFF",
+                      "content": "Continue",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "700"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
     }
   ]
 }
