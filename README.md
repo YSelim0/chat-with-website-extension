@@ -66,7 +66,6 @@ npm test
 ## Related Docs
 
 - `docs/PRODUCT_OVERVIEW.md`
-- `docs/IMPLEMENTATION_PLAN.md`
-- `docs/REMAINING_PLAN.md`
 - `docs/RELEASE_CHECKLIST.md`
+- `docs/PRIVACY_AND_STORAGE.md`
 - `docs/ui-design.pen`

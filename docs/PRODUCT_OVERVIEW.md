@@ -2,12 +2,12 @@
 
 ## Purpose
 
-Website Chat Extension is a browser extension that lets users ask questions about the currently open website using an AI provider of their choice. The extension reads the page content, builds a page-specific context, and answers only from that context instead of relying on the model's general knowledge.
+Website Chat Extension is a browser extension that lets users ask questions about the currently open website using OpenRouter. The extension reads the page content, builds a page-specific context, and answers only from that context instead of relying on the model's general knowledge.
 
 ## Core Product Goals
 
 - Let users chat with the current website directly from the browser extension UI.
-- Support multiple providers from the beginning: OpenAI, Google Gemini, Anthropic Claude, Groq, and OpenRouter.
+- Use OpenRouter as the single provider for the first production-facing release.
 - Keep provider credentials on the user side and persist them locally so setup is required only once.
 - Preserve conversation history with clear website-level grouping.
 - Make old conversations understandable by linking them to the page snapshot used when the answers were generated.
@@ -16,8 +16,8 @@ Website Chat Extension is a browser extension that lets users ask questions abou
 ## User Experience Goals
 
 - First launch opens an onboarding flow instead of an empty chat.
-- Users select a provider, enter an API key, and confirm their setup in a few steps.
-- Provider selection and model selection should be treated separately, because one provider key can expose multiple models.
+- Users connect OpenRouter, enter an API key, and confirm their setup in a few steps.
+- OpenRouter model selection remains separate from API key setup, because one account can expose many models.
 - After setup, the extension shows a short scanning state while building the first page context.
 - After setup, the extension opens directly into chat for future sessions.
 - The extension clearly shows which site the active conversation belongs to.
@@ -37,15 +37,15 @@ Website Chat Extension is a browser extension that lets users ask questions abou
 The first usable version should include:
 
 - Browser action popup UI
-- Onboarding flow with provider selection
+- OpenRouter-first onboarding flow
 - API key storage in local extension storage
-- Default model selection per provider
+- Default OpenRouter model selection
 - A transient scanning screen for active page context preparation
 - Active tab page content extraction
 - Page snapshot creation for conversations
 - Chat screen using page-context retrieval
 - Conversation history with website association
-- Provider adapters for OpenAI, Gemini, Claude, Groq, and OpenRouter
+- OpenRouter grounded chat integration
 
 ## Important Product Decisions
 
@@ -77,23 +77,22 @@ This gives a practical MVP with user-side persistence while leaving room for opt
 
 ### Provider and Model Model
 
-Providers and models should be stored separately.
+OpenRouter account setup and model selection should be stored separately.
 
-- A provider holds the saved API key and provider-level preferences.
-- A model is selected under a provider, because a single provider key can expose multiple models.
-- Each provider should have a default model for new conversations.
+- OpenRouter holds the saved API key and provider-level preferences.
+- A model is selected under OpenRouter, because one account can expose many models.
+- OpenRouter should have a default model for new conversations.
 - Each conversation should persist the exact provider and model used for that chat.
 
-This is especially important for OpenRouter and OpenAI, where one account can expose many different models.
+This is especially important because OpenRouter gives access to many models through one account.
 
 ### UI Flow Model
 
 The popup should follow a clear state-driven flow:
 
 - first-run welcome
-- provider selection
-- one-time API key setup
-- model selection for the chosen provider
+- one-time OpenRouter API key setup
+- model selection for the chosen provider account
 - transient scanning state while preparing page context
 - main chat view
 - history view with archived snapshot labeling
@@ -115,7 +114,7 @@ The scanning state is not part of permanent setup. It should appear only while t
 - Better page retrieval and ranking strategies
 - Source citations for each answer
 - Streaming responses
-- Model configuration per provider
+- Expanded model configuration and filtering
 - Sync and export of chat history
 - Cross-browser packaging and publishing pipeline
 
