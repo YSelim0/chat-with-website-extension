@@ -45,6 +45,7 @@ import type {
 } from '../types/page-context';
 import type { ListOpenRouterModelsResponse } from '../types/provider-models';
 import type { SupportedProvider } from '../types/runtime';
+import { PopupRouter } from './router/PopupRouter';
 
 type PopupScreen =
   | 'loading'
@@ -625,214 +626,129 @@ export function PopupApp() {
 
   if (screen === 'loading') {
     return (
-      <main className="popup-shell popup-shell--centered">
-        <div className="status-card">
-          <p className="eyebrow">Loading</p>
-          <h1>Preparing popup state</h1>
-          <p className="subtitle">
-            Reading local settings and current tab details.
-          </p>
-        </div>
-      </main>
+      <PopupRouter
+        activeHostname={activeHostname}
+        apiKeyInput={apiKeyInput}
+        appChatElement={null}
+        appHistoryElement={null}
+        errorMessage={errorMessage}
+        modelSelectionElement={null}
+        providerHint=""
+        providerLabel="OpenRouter"
+        providerPlaceholder=""
+        readyPanel={readyPanel}
+        screen={screen}
+        onApiKeyInputChange={setApiKeyInput}
+        onBackFromSetup={handleBackToProviders}
+        onContinueFromSetup={handleContinueToModelSelection}
+        onContinueFromWelcome={handleContinueFromWelcome}
+      />
     );
   }
 
   return (
-    <main className="popup-shell">
-      {screen === 'welcome' ? (
-        <WelcomeScreen onContinue={handleContinueFromWelcome} />
-      ) : null}
-
-      {screen === 'provider-setup' && selectedProviderDefinition ? (
-        <ProviderSetupScreen
-          apiKeyInput={apiKeyInput}
-          errorMessage={errorMessage}
-          providerLabel={selectedProviderDefinition.label}
-          providerPlaceholder={selectedProviderDefinition.keyPlaceholder}
-          providerHint={selectedProviderDefinition.keyHint}
-          onApiKeyInputChange={setApiKeyInput}
-          onBack={handleBackToProviders}
-          onContinue={handleContinueToModelSelection}
-        />
-      ) : null}
-
-      {screen === 'model-selection' && selectedProviderDefinition ? (
-        <ModelSelectionScreen
-          errorMessage={errorMessage}
-          hasMoreModels={hasMoreModels}
-          isLoadingModels={isLoadingOpenRouterModels}
-          isSaving={isSaving}
-          modelListError={openRouterModelError}
-          modelSearchQuery={modelSearchQuery}
-          models={visibleModels}
-          providerLabel={selectedProviderDefinition.label}
-          providerSupportsDynamicModels={selectedProvider === 'openrouter'}
-          selectedModel={selectedModelFromAvailableList}
-          selectedModelId={selectedModelId}
-          showFreeOnly={showFreeOpenRouterModelsOnly}
-          onBack={handleBackToProviderSetup}
-          onChooseModel={setSelectedModelId}
-          onLoadMoreModels={() => {
-            setVisibleModelCount(
-              (currentValue) => currentValue + MODEL_PAGE_SIZE,
-            );
-          }}
-          onModelSearchQueryChange={(nextValue) => {
-            setModelSearchQuery(nextValue);
-            setVisibleModelCount(MODEL_PAGE_SIZE);
-          }}
-          onSave={handleSaveProviderConfiguration}
-          onToggleFreeOnly={() => {
-            setShowFreeOpenRouterModelsOnly((currentValue) => !currentValue);
-            setVisibleModelCount(MODEL_PAGE_SIZE);
-          }}
-        />
-      ) : null}
-
-      {screen === 'scanning' ? (
-        <ScanningScreen activeHostname={activeHostname} />
-      ) : null}
-
-      {screen === 'ready' && selectedProviderDefinition ? (
-        <ConfiguredScreen
-          activeHostname={activeHostname}
-          activeConversation={activeConversation}
-          activeSnapshot={activeSnapshot}
-          conversationHistory={conversationHistory}
-          conversationMessages={conversationMessages}
-          errorMessage={errorMessage}
-          isRefreshingContext={isRefreshingContext}
-          isSubmittingQuestion={isSubmittingQuestion}
-          isUsingLiveSnapshot={isUsingLiveSnapshot}
-          latestSnapshot={latestSnapshot}
-          modelLabel={selectedModelDefinition?.label ?? 'No model selected'}
-          questionInput={questionInput}
-          readyPanel={readyPanel}
-          setQuestionInput={setQuestionInput}
-          onOpenConversation={handleOpenConversation}
-          onOpenHistoryPanel={handleOpenHistoryPanel}
-          onQuestionInputKeyDown={handleQuestionInputKeyDown}
-          onAskQuestion={handleAskQuestion}
-          onRefreshContext={handleRefreshContext}
-          onReturnToChatPanel={handleReturnToChatPanel}
-          onOpenProviderSettings={handleOpenProviderSettings}
-        />
-      ) : null}
-    </main>
-  );
-}
-
-function WelcomeScreen({ onContinue }: { onContinue: () => void }) {
-  return (
-    <section className="screen-panel">
-      <div className="hero-badge">Website Chat Extension</div>
-
-      <header className="screen-header">
-        <h1>Chat with the current website using OpenRouter.</h1>
-        <p className="subtitle">
-          Scan the active page, build a page-specific context, and answer only
-          from that context with your selected OpenRouter model.
-        </p>
-      </header>
-
-      <section className="card card--accent">
-        <h2>First launch flow</h2>
-        <ol className="step-list">
-          <li>Connect your OpenRouter API key</li>
-          <li>Choose the default model</li>
-          <li>Scan the current page</li>
-          <li>Start a grounded chat</li>
-        </ol>
-      </section>
-
-      <div className="screen-footer">
-        <button
-          className="button button--primary"
-          onClick={onContinue}
-          type="button"
-        >
-          Get Started
-        </button>
-
-        <p className="helper-text">
-          OpenRouter setup is required only once per browser profile.
-        </p>
-      </div>
-    </section>
-  );
-}
-
-function ProviderSetupScreen({
-  apiKeyInput,
-  errorMessage,
-  providerHint,
-  providerLabel,
-  providerPlaceholder,
-  onApiKeyInputChange,
-  onBack,
-  onContinue,
-}: {
-  apiKeyInput: string;
-  errorMessage: string | null;
-  providerHint: string;
-  providerLabel: string;
-  providerPlaceholder: string;
-  onApiKeyInputChange: (nextValue: string) => void;
-  onBack: () => void;
-  onContinue: () => void;
-}) {
-  return (
-    <section className="screen-panel">
-      <header className="screen-header">
-        <h1>Connect OpenRouter</h1>
-        <p className="subtitle">
-          This screen appears only once during initial setup. After saving your
-          OpenRouter key locally, later launches open directly into chat.
-        </p>
-      </header>
-
-      <section className="card card--accent">
-        <label className="field-label" htmlFor="provider-api-key">
-          {providerLabel} API Key
-        </label>
-
-        <input
-          autoComplete="off"
-          className="text-input"
-          id="provider-api-key"
-          onChange={(event) => onApiKeyInputChange(event.target.value)}
-          placeholder={providerPlaceholder}
-          spellCheck={false}
-          type="password"
-          value={apiKeyInput}
-        />
-
-        <p className="helper-text helper-text--tight">{providerHint}</p>
-
-        {errorMessage ? <p className="error-text">{errorMessage}</p> : null}
-      </section>
-
-      <section className="card card--accent-soft">
-        <h2>Saved once, reused later</h2>
-        <p className="helper-text helper-text--body">
-          Your OpenRouter key lives in local extension storage on the
-          user&apos;s device. A future settings screen can update or replace it.
-        </p>
-      </section>
-
-      <div className="button-row">
-        <button className="button button--ghost" onClick={onBack} type="button">
-          Back
-        </button>
-        <button
-          className="button button--primary"
-          onClick={onContinue}
-          type="button"
-        >
-          Continue
-        </button>
-      </div>
-    </section>
+    <PopupRouter
+      activeHostname={activeHostname}
+      apiKeyInput={apiKeyInput}
+      appChatElement={
+        selectedProviderDefinition ? (
+          <ConfiguredScreen
+            activeHostname={activeHostname}
+            activeConversation={activeConversation}
+            activeSnapshot={activeSnapshot}
+            conversationHistory={conversationHistory}
+            conversationMessages={conversationMessages}
+            errorMessage={errorMessage}
+            isRefreshingContext={isRefreshingContext}
+            isSubmittingQuestion={isSubmittingQuestion}
+            isUsingLiveSnapshot={isUsingLiveSnapshot}
+            latestSnapshot={latestSnapshot}
+            modelLabel={selectedModelDefinition?.label ?? 'No model selected'}
+            questionInput={questionInput}
+            readyPanel="chat"
+            setQuestionInput={setQuestionInput}
+            onOpenConversation={handleOpenConversation}
+            onOpenHistoryPanel={handleOpenHistoryPanel}
+            onQuestionInputKeyDown={handleQuestionInputKeyDown}
+            onAskQuestion={handleAskQuestion}
+            onRefreshContext={handleRefreshContext}
+            onReturnToChatPanel={handleReturnToChatPanel}
+            onOpenProviderSettings={handleOpenProviderSettings}
+          />
+        ) : null
+      }
+      appHistoryElement={
+        selectedProviderDefinition ? (
+          <ConfiguredScreen
+            activeHostname={activeHostname}
+            activeConversation={activeConversation}
+            activeSnapshot={activeSnapshot}
+            conversationHistory={conversationHistory}
+            conversationMessages={conversationMessages}
+            errorMessage={errorMessage}
+            isRefreshingContext={isRefreshingContext}
+            isSubmittingQuestion={isSubmittingQuestion}
+            isUsingLiveSnapshot={isUsingLiveSnapshot}
+            latestSnapshot={latestSnapshot}
+            modelLabel={selectedModelDefinition?.label ?? 'No model selected'}
+            questionInput={questionInput}
+            readyPanel="history"
+            setQuestionInput={setQuestionInput}
+            onOpenConversation={handleOpenConversation}
+            onOpenHistoryPanel={handleOpenHistoryPanel}
+            onQuestionInputKeyDown={handleQuestionInputKeyDown}
+            onAskQuestion={handleAskQuestion}
+            onRefreshContext={handleRefreshContext}
+            onReturnToChatPanel={handleReturnToChatPanel}
+            onOpenProviderSettings={handleOpenProviderSettings}
+          />
+        ) : null
+      }
+      errorMessage={errorMessage}
+      modelSelectionElement={
+        selectedProviderDefinition ? (
+          <ModelSelectionScreen
+            errorMessage={errorMessage}
+            hasMoreModels={hasMoreModels}
+            isLoadingModels={isLoadingOpenRouterModels}
+            isSaving={isSaving}
+            modelListError={openRouterModelError}
+            modelSearchQuery={modelSearchQuery}
+            models={visibleModels}
+            providerLabel={selectedProviderDefinition.label}
+            providerSupportsDynamicModels={selectedProvider === 'openrouter'}
+            selectedModel={selectedModelFromAvailableList}
+            selectedModelId={selectedModelId}
+            showFreeOnly={showFreeOpenRouterModelsOnly}
+            onBack={handleBackToProviderSetup}
+            onChooseModel={setSelectedModelId}
+            onLoadMoreModels={() => {
+              setVisibleModelCount(
+                (currentValue) => currentValue + MODEL_PAGE_SIZE,
+              );
+            }}
+            onModelSearchQueryChange={(nextValue) => {
+              setModelSearchQuery(nextValue);
+              setVisibleModelCount(MODEL_PAGE_SIZE);
+            }}
+            onSave={handleSaveProviderConfiguration}
+            onToggleFreeOnly={() => {
+              setShowFreeOpenRouterModelsOnly((currentValue) => !currentValue);
+              setVisibleModelCount(MODEL_PAGE_SIZE);
+            }}
+          />
+        ) : null
+      }
+      providerHint={selectedProviderDefinition?.keyHint ?? ''}
+      providerLabel={selectedProviderDefinition?.label ?? 'OpenRouter'}
+      providerPlaceholder={selectedProviderDefinition?.keyPlaceholder ?? ''}
+      readyPanel={readyPanel}
+      screen={screen}
+      onApiKeyInputChange={setApiKeyInput}
+      onBackFromSetup={handleBackToProviders}
+      onContinueFromSetup={handleContinueToModelSelection}
+      onContinueFromWelcome={handleContinueFromWelcome}
+    />
   );
 }
 
@@ -1007,40 +923,6 @@ function ModelSelectionScreen({
           {isSaving ? 'Saving...' : 'Continue'}
         </button>
       </div>
-    </section>
-  );
-}
-
-function ScanningScreen({ activeHostname }: { activeHostname: string | null }) {
-  return (
-    <section className="screen-panel">
-      <header className="screen-header">
-        <h1>Scanning the active page</h1>
-        <p className="subtitle">
-          This is a short-lived loading state shown after setup or when the user
-          refreshes context from chat.
-        </p>
-      </header>
-
-      <section className="card card--accent">
-        <h2>{activeHostname ?? 'Current tab'}</h2>
-        <p className="helper-text helper-text--body">
-          Collecting readable content, section headings, and chunk metadata for
-          retrieval.
-        </p>
-
-        <div aria-hidden="true" className="progress-track">
-          <div className="progress-fill" />
-        </div>
-      </section>
-
-      <section className="card card--accent-soft">
-        <h2>Progress</h2>
-        <p className="helper-text helper-text--body">
-          Step 1 of 2. Next, the popup will open into the configured shell while
-          the extracted page snapshot becomes available for the next chat phase.
-        </p>
-      </section>
     </section>
   );
 }
