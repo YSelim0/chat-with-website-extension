@@ -2,6 +2,8 @@
 
 OpenRouter-first Chrome extension that scans the active website, saves a local page snapshot, and answers questions only from that snapshot context.
 
+Current beta version: `0.1.0-beta.1`
+
 ## Current Scope
 
 - OpenRouter-only onboarding flow
@@ -63,9 +65,49 @@ npm run check
 npm test
 ```
 
+## Contributing
+
+Contributions are welcome. If you want to improve the extension, keep changes focused, document the reasoning behind the change, and include the validation steps you ran locally.
+
+Typical contribution flow:
+
+1. Fork the repository on GitHub
+2. Clone your fork locally
+3. Create a branch for your change
+4. Run the local checks before opening a pull request
+5. Open a pull request with a concise summary and testing notes
+
+Clone with HTTPS:
+
+```bash
+git clone https://github.com/YSelim0/chat-with-website-extension.git
+```
+
+Or clone with SSH:
+
+```bash
+git clone git@github.com:YSelim0/chat-with-website-extension.git
+```
+
+Before opening a pull request, run:
+
+```bash
+npm run check
+npm test
+npm run build
+```
+
+Repository URL:
+
+```text
+https://github.com/YSelim0/chat-with-website-extension
+```
+
 ## Related Docs
 
 - `docs/PRODUCT_OVERVIEW.md`
 - `docs/RELEASE_CHECKLIST.md`
 - `docs/PRIVACY_AND_STORAGE.md`
+- `docs/PRIVACY_POLICY.md`
+- `docs/RELEASE_SUMMARY.md`
 - `docs/ui-design.pen`
