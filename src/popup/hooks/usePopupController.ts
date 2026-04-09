@@ -86,6 +86,7 @@ export function usePopupController() {
   } = usePopupChatFlow({
     activeSnapshot: session.activeSnapshot,
     apiKeyInput: session.apiKeyInput,
+    conversationMessages: session.conversationMessages,
     isSubmittingQuestion: session.isSubmittingQuestion,
     questionInput: session.questionInput,
     selectedModelId: session.selectedModelId,
@@ -130,6 +131,7 @@ export function usePopupController() {
   return {
     ...session,
     hasMoreModels,
+    isAssistantThinking: session.isAssistantThinking,
     isUsingLiveSnapshot,
     selectedModelDefinition,
     selectedModelFromAvailableList,

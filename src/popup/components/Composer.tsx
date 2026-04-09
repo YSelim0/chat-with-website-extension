@@ -67,7 +67,7 @@ export function Composer({
               className="button-icon"
               src={sendIconUrl}
             />
-            {isSubmittingQuestion ? 'Sending...' : 'Send'}
+            Send
           </button>
         </div>
       </div>

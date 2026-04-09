@@ -22,6 +22,7 @@ export function ConfiguredPage({
   conversationHistory,
   conversationMessages,
   errorMessage,
+  isAssistantThinking,
   isRefreshingContext,
   isSubmittingQuestion,
   isUsingLiveSnapshot,
@@ -44,6 +45,7 @@ export function ConfiguredPage({
   conversationHistory: ConversationSummary[];
   conversationMessages: ConversationMessage[];
   errorMessage: string | null;
+  isAssistantThinking: boolean;
   isRefreshingContext: boolean;
   isSubmittingQuestion: boolean;
   isUsingLiveSnapshot: boolean;
@@ -116,6 +118,7 @@ export function ConfiguredPage({
               onRefreshContext={onRefreshContext}
             />
             <MessageList
+              isAssistantThinking={isAssistantThinking}
               conversationMessages={conversationMessages}
               onOpenHistoryPanel={onOpenHistoryPanel}
             />

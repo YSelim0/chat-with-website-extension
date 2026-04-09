@@ -80,21 +80,11 @@ export function ModelSelectionPage({
               instead.
             </p>
           ) : null}
-        </section>
-      ) : null}
 
-      {selectedModel ? (
-        <section className="card card--accent selected-model-card">
-          <div className="provider-card__row">
-            <h2>Selected model</h2>
-            {selectedModel.isFree ? (
-              <span className="model-badge">Free</span>
-            ) : null}
-          </div>
-          <p className="helper-text helper-text--body">{selectedModel.label}</p>
-          {selectedModel.providerName ? (
-            <p className="helper-text helper-text--tight">
-              {selectedModel.providerName}
+          {selectedModel ? (
+            <p className="selected-model-inline">
+              Selected model: <span>{selectedModel.label}</span>
+              {selectedModel.isFree ? ' · Free' : ''}
             </p>
           ) : null}
         </section>
@@ -136,25 +126,17 @@ export function ModelSelectionPage({
             );
           })
         )}
+
+        {hasMoreModels ? (
+          <button
+            className="button button--ghost model-load-more"
+            onClick={onLoadMoreModels}
+            type="button"
+          >
+            Load more models
+          </button>
+        ) : null}
       </div>
-
-      {hasMoreModels ? (
-        <button
-          className="button button--ghost"
-          onClick={onLoadMoreModels}
-          type="button"
-        >
-          Load more models
-        </button>
-      ) : null}
-
-      <section className="card card--accent-soft">
-        <h2>Model list behavior</h2>
-        <p className="helper-text helper-text--body">
-          OpenRouter models are fetched dynamically in this screen. If loading
-          fails, the setup falls back to a small built-in catalog.
-        </p>
-      </section>
 
       {errorMessage ? <p className="error-text">{errorMessage}</p> : null}
 

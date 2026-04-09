@@ -5,9 +5,11 @@ import type { ConversationMessage } from '../../types/chat';
 import { MarkdownMessage } from './MarkdownMessage';
 
 export function MessageList({
+  isAssistantThinking,
   conversationMessages,
   onOpenHistoryPanel,
 }: {
+  isAssistantThinking: boolean;
   conversationMessages: ConversationMessage[];
   onOpenHistoryPanel: () => void;
 }) {
@@ -68,6 +70,17 @@ export function MessageList({
               )}
             </article>
           ))}
+          {isAssistantThinking ? (
+            <article className="message-bubble message-bubble--assistant message-bubble--thinking">
+              <p className="chat-card__eyebrow">assistant</p>
+              <div className="thinking-dots" role="status" aria-live="polite">
+                <span className="sr-only">Assistant is typing</span>
+                <span />
+                <span />
+                <span />
+              </div>
+            </article>
+          ) : null}
           <div ref={bottomAnchorRef} />
         </div>
       )}
