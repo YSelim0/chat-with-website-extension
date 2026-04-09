@@ -2,18 +2,21 @@ import {
   createContext,
   type Dispatch,
   type ReactNode,
+  useCallback,
   useContext,
   useMemo,
   useReducer,
 } from 'react';
 
 import type { ModelDefinition } from '../../lib/providers/catalog';
+import type { ExtensionSettings } from '../../lib/storage/settings';
 import type {
   Conversation,
   ConversationMessage,
   ConversationSummary,
 } from '../../types/chat';
 import type { SnapshotSummary } from '../../types/page-context';
+import type { SupportedProvider } from '../../types/runtime';
 
 export type PopupScreen =
   | 'loading'
@@ -29,41 +32,57 @@ export type PopupSessionState = {
   activeConversation: Conversation | null;
   activeHostname: string | null;
   activeSnapshot: SnapshotSummary | null;
+  apiKeyInput: string;
   conversationHistory: ConversationSummary[];
   conversationMessages: ConversationMessage[];
   errorMessage: string | null;
+  isLoadingOpenRouterModels: boolean;
+  isRefreshingContext: boolean;
+  isSaving: boolean;
+  isSubmittingQuestion: boolean;
   latestSnapshot: SnapshotSummary | null;
+  modelSearchQuery: string;
   openRouterModels: ModelDefinition[];
+  openRouterModelError: string | null;
+  questionInput: string;
   readyPanel: ReadyPanel;
   screen: PopupScreen;
+  selectedModelId: string;
+  selectedProvider: SupportedProvider;
+  settings: ExtensionSettings | null;
+  showFreeOpenRouterModelsOnly: boolean;
+  visibleModelCount: number;
 };
 
-type PopupSessionAction =
-  | { type: 'set-screen'; screen: PopupScreen }
-  | { type: 'set-ready-panel'; readyPanel: ReadyPanel }
-  | { type: 'set-error'; errorMessage: string | null }
-  | {
-      type: 'hydrate-ready-state';
-      activeConversation: Conversation | null;
-      activeHostname: string | null;
-      activeSnapshot: SnapshotSummary | null;
-      conversationHistory: ConversationSummary[];
-      conversationMessages: ConversationMessage[];
-      latestSnapshot: SnapshotSummary | null;
-      openRouterModels: ModelDefinition[];
-    };
+type PopupSessionAction = {
+  type: 'patch-state';
+  payload: Partial<PopupSessionState>;
+};
 
 const initialPopupSessionState: PopupSessionState = {
   activeConversation: null,
   activeHostname: null,
   activeSnapshot: null,
+  apiKeyInput: '',
   conversationHistory: [],
   conversationMessages: [],
   errorMessage: null,
+  isLoadingOpenRouterModels: false,
+  isRefreshingContext: false,
+  isSaving: false,
+  isSubmittingQuestion: false,
   latestSnapshot: null,
+  modelSearchQuery: '',
   openRouterModels: [],
+  openRouterModelError: null,
+  questionInput: '',
   readyPanel: 'chat',
   screen: 'loading',
+  selectedModelId: '',
+  selectedProvider: 'openrouter',
+  settings: null,
+  showFreeOpenRouterModelsOnly: true,
+  visibleModelCount: 20,
 };
 
 function popupSessionReducer(
@@ -71,22 +90,10 @@ function popupSessionReducer(
   action: PopupSessionAction,
 ): PopupSessionState {
   switch (action.type) {
-    case 'set-screen':
-      return { ...state, screen: action.screen };
-    case 'set-ready-panel':
-      return { ...state, readyPanel: action.readyPanel };
-    case 'set-error':
-      return { ...state, errorMessage: action.errorMessage };
-    case 'hydrate-ready-state':
+    case 'patch-state':
       return {
         ...state,
-        activeConversation: action.activeConversation,
-        activeHostname: action.activeHostname,
-        activeSnapshot: action.activeSnapshot,
-        conversationHistory: action.conversationHistory,
-        conversationMessages: action.conversationMessages,
-        latestSnapshot: action.latestSnapshot,
-        openRouterModels: action.openRouterModels,
+        ...action.payload,
       };
     default:
       return state;
@@ -136,4 +143,21 @@ export function usePopupSessionDispatch() {
   }
 
   return dispatch;
+}
+
+export function usePopupSession() {
+  const state = usePopupSessionState();
+  const dispatch = usePopupSessionDispatch();
+
+  const setSessionState = useCallback(
+    (payload: Partial<PopupSessionState>) => {
+      dispatch({ type: 'patch-state', payload });
+    },
+    [dispatch],
+  );
+
+  return {
+    ...state,
+    setSessionState,
+  };
 }

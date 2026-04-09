@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 
+import { PopupSessionProvider } from '../../src/popup/context/PopupSessionContext';
 import { PopupApp } from '../../src/popup/PopupApp';
 import '../../src/styles/global.css';
 
@@ -12,6 +13,8 @@ if (!rootElement) {
 
 ReactDOM.createRoot(rootElement).render(
   <React.StrictMode>
-    <PopupApp />
+    <PopupSessionProvider>
+      <PopupApp />
+    </PopupSessionProvider>
   </React.StrictMode>,
 );

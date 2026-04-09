@@ -1,10 +1,9 @@
-import { type KeyboardEvent, useEffect, useMemo, useState } from 'react';
+import { type KeyboardEvent, useEffect, useMemo } from 'react';
 
 import { getActiveTabHostname } from '../../lib/browser/active-tab';
 import {
   getDefaultModelForProvider,
   getProviderDefinition,
-  type ModelDefinition,
 } from '../../lib/providers/catalog';
 import {
   getConversationById,
@@ -16,23 +15,14 @@ import {
   getPageSnapshotSummaryById,
 } from '../../lib/storage/page-snapshots';
 import {
-  type ExtensionSettings,
   getExtensionSettings,
   getSavedApiKey,
   saveProviderConfiguration,
 } from '../../lib/storage/settings';
-import type {
-  AskQuestionResponse,
-  Conversation,
-  ConversationMessage,
-  ConversationSummary,
-} from '../../types/chat';
-import type {
-  ExtractActivePageResponse,
-  SnapshotSummary,
-} from '../../types/page-context';
+import type { AskQuestionResponse } from '../../types/chat';
+import type { ExtractActivePageResponse } from '../../types/page-context';
 import type { ListOpenRouterModelsResponse } from '../../types/provider-models';
-import type { SupportedProvider } from '../../types/runtime';
+import { usePopupSession } from '../context/PopupSessionContext';
 import {
   filterModels,
   getInitialSelectedModel,
@@ -54,45 +44,32 @@ export type PopupScreen =
 export type ReadyPanel = 'chat' | 'history';
 
 export function usePopupController() {
-  const [screen, setScreen] = useState<PopupScreen>('loading');
-  const [settings, setSettings] = useState<ExtensionSettings | null>(null);
-  const [selectedProvider, setSelectedProvider] =
-    useState<SupportedProvider>('openrouter');
-  const [selectedModelId, setSelectedModelId] = useState('');
-  const [apiKeyInput, setApiKeyInput] = useState('');
-  const [activeHostname, setActiveHostname] = useState<string | null>(null);
-  const [latestSnapshot, setLatestSnapshot] = useState<SnapshotSummary | null>(
-    null,
-  );
-  const [activeSnapshot, setActiveSnapshot] = useState<SnapshotSummary | null>(
-    null,
-  );
-  const [activeConversation, setActiveConversation] =
-    useState<Conversation | null>(null);
-  const [readyPanel, setReadyPanel] = useState<ReadyPanel>('chat');
-  const [isSaving, setIsSaving] = useState(false);
-  const [isRefreshingContext, setIsRefreshingContext] = useState(false);
-  const [isSubmittingQuestion, setIsSubmittingQuestion] = useState(false);
-  const [questionInput, setQuestionInput] = useState('');
-  const [modelSearchQuery, setModelSearchQuery] = useState('');
-  const [openRouterModels, setOpenRouterModels] = useState<ModelDefinition[]>(
-    [],
-  );
-  const [isLoadingOpenRouterModels, setIsLoadingOpenRouterModels] =
-    useState(false);
-  const [openRouterModelError, setOpenRouterModelError] = useState<
-    string | null
-  >(null);
-  const [showFreeOpenRouterModelsOnly, setShowFreeOpenRouterModelsOnly] =
-    useState(true);
-  const [visibleModelCount, setVisibleModelCount] = useState(MODEL_PAGE_SIZE);
-  const [conversationMessages, setConversationMessages] = useState<
-    ConversationMessage[]
-  >([]);
-  const [conversationHistory, setConversationHistory] = useState<
-    ConversationSummary[]
-  >([]);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const {
+    activeConversation,
+    activeHostname,
+    activeSnapshot,
+    apiKeyInput,
+    conversationHistory,
+    conversationMessages,
+    errorMessage,
+    isLoadingOpenRouterModels,
+    isRefreshingContext,
+    isSaving,
+    isSubmittingQuestion,
+    latestSnapshot,
+    modelSearchQuery,
+    openRouterModels,
+    openRouterModelError,
+    questionInput,
+    readyPanel,
+    screen,
+    selectedModelId,
+    selectedProvider,
+    settings,
+    setSessionState,
+    showFreeOpenRouterModelsOnly,
+    visibleModelCount,
+  } = usePopupSession();
 
   const selectedProviderDefinition = useMemo(() => {
     return getProviderDefinition(selectedProvider);
@@ -162,35 +139,44 @@ export function usePopupController() {
 
         const initialProvider = getInitialSelectedProvider(storedSettings);
 
-        setSettings(storedSettings);
-        setSelectedProvider(initialProvider);
-        setSelectedModelId(
-          getInitialSelectedModel(storedSettings, initialProvider),
-        );
-        setApiKeyInput(getSavedApiKey(storedSettings, initialProvider));
-        setActiveHostname(hostname);
+        setSessionState({
+          settings: storedSettings,
+          selectedProvider: initialProvider,
+          selectedModelId: getInitialSelectedModel(
+            storedSettings,
+            initialProvider,
+          ),
+          apiKeyInput: getSavedApiKey(storedSettings, initialProvider),
+          activeHostname: hostname,
+        });
 
         const history = await listConversationSummaries();
-        setConversationHistory(history);
+        setSessionState({ conversationHistory: history });
 
         if (hostname) {
           const latestSnapshotForHostname =
             await getLatestSnapshotForHostname(hostname);
 
-          setLatestSnapshot(latestSnapshotForHostname);
-          setActiveSnapshot(latestSnapshotForHostname);
+          setSessionState({
+            latestSnapshot: latestSnapshotForHostname,
+            activeSnapshot: latestSnapshotForHostname,
+          });
 
           if (latestSnapshotForHostname) {
             const existingConversation = await getConversationBySnapshotId(
               latestSnapshotForHostname.id,
             );
 
-            setActiveConversation(existingConversation?.conversation ?? null);
-            setConversationMessages(existingConversation?.messages ?? []);
+            setSessionState({
+              activeConversation: existingConversation?.conversation ?? null,
+              conversationMessages: existingConversation?.messages ?? [],
+            });
           }
         }
 
-        setScreen(storedSettings.hasCompletedOnboarding ? 'ready' : 'welcome');
+        setSessionState({
+          screen: storedSettings.hasCompletedOnboarding ? 'ready' : 'welcome',
+        });
       } catch (error) {
         console.error('Failed to initialize popup state.', error);
 
@@ -198,10 +184,11 @@ export function usePopupController() {
           return;
         }
 
-        setErrorMessage(
-          'Failed to load extension settings. Please reopen the popup.',
-        );
-        setScreen('welcome');
+        setSessionState({
+          errorMessage:
+            'Failed to load extension settings. Please reopen the popup.',
+          screen: 'welcome',
+        });
       }
     }
 
@@ -210,7 +197,7 @@ export function usePopupController() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [setSessionState]);
 
   useEffect(() => {
     if (screen !== 'model-selection' || selectedProvider !== 'openrouter') {
@@ -221,8 +208,10 @@ export function usePopupController() {
 
     async function loadOpenRouterModels() {
       try {
-        setIsLoadingOpenRouterModels(true);
-        setOpenRouterModelError(null);
+        setSessionState({
+          isLoadingOpenRouterModels: true,
+          openRouterModelError: null,
+        });
 
         const response = (await chrome.runtime.sendMessage({
           type: 'openrouter:list-models',
@@ -233,12 +222,14 @@ export function usePopupController() {
         }
 
         if (!response.ok) {
-          setOpenRouterModelError(response.error);
-          setOpenRouterModels([]);
+          setSessionState({
+            openRouterModelError: response.error,
+            openRouterModels: [],
+          });
           return;
         }
 
-        setOpenRouterModels(response.models);
+        setSessionState({ openRouterModels: response.models });
 
         const hasCurrentSelection = response.models.some(
           (model) => model.id === selectedModelId,
@@ -256,22 +247,23 @@ export function usePopupController() {
           response.models[0];
 
         if (preferredModel) {
-          setSelectedModelId(preferredModel.id);
+          setSessionState({ selectedModelId: preferredModel.id });
         }
       } catch (error) {
         if (!isMounted) {
           return;
         }
 
-        setOpenRouterModelError(
-          error instanceof Error
-            ? error.message
-            : 'Failed to load the OpenRouter model list.',
-        );
-        setOpenRouterModels([]);
+        setSessionState({
+          openRouterModelError:
+            error instanceof Error
+              ? error.message
+              : 'Failed to load the OpenRouter model list.',
+          openRouterModels: [],
+        });
       } finally {
         if (isMounted) {
-          setIsLoadingOpenRouterModels(false);
+          setSessionState({ isLoadingOpenRouterModels: false });
         }
       }
     }
@@ -281,39 +273,35 @@ export function usePopupController() {
     return () => {
       isMounted = false;
     };
-  }, [screen, selectedModelId, selectedProvider]);
+  }, [screen, selectedModelId, selectedProvider, setSessionState]);
 
   function handleContinueFromWelcome() {
-    setScreen('provider-setup');
+    setSessionState({ screen: 'provider-setup' });
   }
 
   function handleBackToProviders() {
-    setErrorMessage(null);
-    setScreen('welcome');
+    setSessionState({ errorMessage: null, screen: 'welcome' });
   }
 
   function handleContinueToModelSelection() {
     const trimmedApiKey = apiKeyInput.trim();
 
     if (!trimmedApiKey) {
-      setErrorMessage('Enter an API key before continuing.');
+      setSessionState({ errorMessage: 'Enter an API key before continuing.' });
       return;
     }
 
-    setErrorMessage(null);
-    setScreen('model-selection');
+    setSessionState({ errorMessage: null, screen: 'model-selection' });
   }
 
   function handleBackToProviderSetup() {
-    setErrorMessage(null);
-    setScreen('provider-setup');
+    setSessionState({ errorMessage: null, screen: 'provider-setup' });
   }
 
   async function runActivePageExtraction() {
     const startedAt = Date.now();
 
-    setScreen('scanning');
-    setErrorMessage(null);
+    setSessionState({ screen: 'scanning', errorMessage: null });
 
     let response: ExtractActivePageResponse;
 
@@ -326,12 +314,13 @@ export function usePopupController() {
         'Scanning took too long. Please refresh the tab and try again.',
       )) as ExtractActivePageResponse;
     } catch (error) {
-      setErrorMessage(
-        error instanceof Error
-          ? error.message
-          : 'Scanning failed before the page context was returned.',
-      );
-      setScreen('ready');
+      setSessionState({
+        errorMessage:
+          error instanceof Error
+            ? error.message
+            : 'Scanning failed before the page context was returned.',
+        screen: 'ready',
+      });
       return;
     }
 
@@ -345,8 +334,7 @@ export function usePopupController() {
         });
       }
 
-      setErrorMessage(response.error);
-      setScreen('ready');
+      setSessionState({ errorMessage: response.error, screen: 'ready' });
       return;
     }
 
@@ -359,31 +347,36 @@ export function usePopupController() {
       });
     }
 
-    setLatestSnapshot(response.snapshot);
-    setActiveSnapshot(response.snapshot);
-    setActiveConversation(null);
-    setConversationMessages([]);
-    setReadyPanel('chat');
-    setScreen('ready');
+    setSessionState({
+      latestSnapshot: response.snapshot,
+      activeSnapshot: response.snapshot,
+      activeConversation: null,
+      conversationMessages: [],
+      readyPanel: 'chat',
+      screen: 'ready',
+    });
   }
 
   async function handleSaveProviderConfiguration() {
     const trimmedApiKey = apiKeyInput.trim();
 
     if (!trimmedApiKey) {
-      setScreen('provider-setup');
-      setErrorMessage('Enter an API key before continuing.');
+      setSessionState({
+        screen: 'provider-setup',
+        errorMessage: 'Enter an API key before continuing.',
+      });
       return;
     }
 
     if (!selectedModelId) {
-      setErrorMessage('Choose a default model before continuing.');
+      setSessionState({
+        errorMessage: 'Choose a default model before continuing.',
+      });
       return;
     }
 
     try {
-      setIsSaving(true);
-      setErrorMessage(null);
+      setSessionState({ isSaving: true, errorMessage: null });
 
       const nextSettings = await saveProviderConfiguration(
         selectedProvider,
@@ -391,37 +384,39 @@ export function usePopupController() {
         selectedModelId,
       );
 
-      setSettings(nextSettings);
+      setSessionState({ settings: nextSettings });
       await runActivePageExtraction();
     } catch (error) {
       console.error('Failed to save provider configuration.', error);
-      setErrorMessage('Failed to save the provider configuration locally.');
+      setSessionState({
+        errorMessage: 'Failed to save the provider configuration locally.',
+      });
     } finally {
-      setIsSaving(false);
+      setSessionState({ isSaving: false });
     }
   }
 
   function handleOpenProviderSettings() {
-    setApiKeyInput(settings ? getSavedApiKey(settings, selectedProvider) : '');
-    setSelectedModelId(
-      settings
+    setSessionState({
+      apiKeyInput: settings ? getSavedApiKey(settings, selectedProvider) : '',
+      selectedModelId: settings
         ? getInitialSelectedModel(settings, selectedProvider)
         : (getDefaultModelForProvider(selectedProvider)?.id ?? ''),
-    );
-    setModelSearchQuery('');
-    setVisibleModelCount(MODEL_PAGE_SIZE);
-    setConversationMessages([]);
-    setActiveConversation(null);
-    setErrorMessage(null);
-    setScreen('provider-setup');
+      modelSearchQuery: '',
+      visibleModelCount: MODEL_PAGE_SIZE,
+      conversationMessages: [],
+      activeConversation: null,
+      errorMessage: null,
+      screen: 'provider-setup',
+    });
   }
 
   async function handleRefreshContext() {
     try {
-      setIsRefreshingContext(true);
+      setSessionState({ isRefreshingContext: true });
       await runActivePageExtraction();
     } finally {
-      setIsRefreshingContext(false);
+      setSessionState({ isRefreshingContext: false });
     }
   }
 
@@ -429,20 +424,20 @@ export function usePopupController() {
     const trimmedQuestion = questionInput.trim();
 
     if (!trimmedQuestion) {
-      setErrorMessage('Enter a question before sending it.');
+      setSessionState({ errorMessage: 'Enter a question before sending it.' });
       return;
     }
 
     if (!activeSnapshot) {
-      setErrorMessage(
-        'Scan the page context before asking a grounded question.',
-      );
+      setSessionState({
+        errorMessage:
+          'Scan the page context before asking a grounded question.',
+      });
       return;
     }
 
     try {
-      setIsSubmittingQuestion(true);
-      setErrorMessage(null);
+      setSessionState({ isSubmittingQuestion: true, errorMessage: null });
 
       const response = (await chrome.runtime.sendMessage({
         payload: {
@@ -455,22 +450,25 @@ export function usePopupController() {
       })) as AskQuestionResponse;
 
       if (!response.ok) {
-        setErrorMessage(response.error);
+        setSessionState({ errorMessage: response.error });
         return;
       }
 
-      setActiveConversation(response.conversation);
-      setConversationMessages(response.messages);
-      setConversationHistory(await listConversationSummaries());
-      setQuestionInput('');
+      setSessionState({
+        activeConversation: response.conversation,
+        conversationMessages: response.messages,
+        conversationHistory: await listConversationSummaries(),
+        questionInput: '',
+      });
     } catch (error) {
-      setErrorMessage(
-        error instanceof Error
-          ? error.message
-          : 'The grounded chat request failed unexpectedly.',
-      );
+      setSessionState({
+        errorMessage:
+          error instanceof Error
+            ? error.message
+            : 'The grounded chat request failed unexpectedly.',
+      });
     } finally {
-      setIsSubmittingQuestion(false);
+      setSessionState({ isSubmittingQuestion: false });
     }
   }
 
@@ -494,7 +492,9 @@ export function usePopupController() {
     const conversation = await getConversationById(conversationId);
 
     if (!conversation) {
-      setErrorMessage('The selected conversation could not be loaded.');
+      setSessionState({
+        errorMessage: 'The selected conversation could not be loaded.',
+      });
       return;
     }
 
@@ -503,25 +503,27 @@ export function usePopupController() {
     );
 
     if (!snapshotSummary) {
-      setErrorMessage(
-        'The selected conversation snapshot could not be loaded.',
-      );
+      setSessionState({
+        errorMessage: 'The selected conversation snapshot could not be loaded.',
+      });
       return;
     }
 
-    setActiveConversation(conversation.conversation);
-    setActiveSnapshot(snapshotSummary);
-    setConversationMessages(conversation.messages);
-    setReadyPanel('chat');
-    setErrorMessage(null);
+    setSessionState({
+      activeConversation: conversation.conversation,
+      activeSnapshot: snapshotSummary,
+      conversationMessages: conversation.messages,
+      readyPanel: 'chat',
+      errorMessage: null,
+    });
   }
 
   function handleOpenHistoryPanel() {
-    setReadyPanel('history');
+    setSessionState({ readyPanel: 'history' });
   }
 
   function handleReturnToChatPanel() {
-    setReadyPanel('chat');
+    setSessionState({ readyPanel: 'chat' });
   }
 
   return {
@@ -550,12 +552,29 @@ export function usePopupController() {
     selectedModelId,
     selectedProvider,
     selectedProviderDefinition,
-    setApiKeyInput,
-    setModelSearchQuery,
-    setQuestionInput,
-    setSelectedModelId,
-    setShowFreeOpenRouterModelsOnly,
-    setVisibleModelCount,
+    setApiKeyInput: (apiKeyInput: string) => setSessionState({ apiKeyInput }),
+    setModelSearchQuery: (modelSearchQuery: string) =>
+      setSessionState({ modelSearchQuery }),
+    setQuestionInput: (questionInput: string) =>
+      setSessionState({ questionInput }),
+    setSelectedModelId: (selectedModelId: string) =>
+      setSessionState({ selectedModelId }),
+    setShowFreeOpenRouterModelsOnly: (
+      updater: boolean | ((currentValue: boolean) => boolean),
+    ) =>
+      setSessionState({
+        showFreeOpenRouterModelsOnly:
+          typeof updater === 'function'
+            ? updater(showFreeOpenRouterModelsOnly)
+            : updater,
+      }),
+    setVisibleModelCount: (
+      updater: number | ((currentValue: number) => number),
+    ) =>
+      setSessionState({
+        visibleModelCount:
+          typeof updater === 'function' ? updater(visibleModelCount) : updater,
+      }),
     showFreeOpenRouterModelsOnly,
     visibleModels,
     handleAskQuestion,
