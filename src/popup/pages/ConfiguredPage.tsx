@@ -1,4 +1,4 @@
-import { type KeyboardEvent, useEffect, useRef } from 'react';
+import type { KeyboardEvent } from 'react';
 
 import historyIconUrl from '../../assets/icons/history.svg';
 import type {
@@ -60,16 +60,7 @@ export function ConfiguredPage({
   onRefreshContext: () => void;
   onReturnToChatPanel: () => void;
 }) {
-  const messageListRef = useRef<HTMLDivElement | null>(null);
   const snapshotAction = getSnapshotAction(errorMessage);
-
-  useEffect(() => {
-    if (!messageListRef.current) {
-      return;
-    }
-
-    messageListRef.current.scrollTop = messageListRef.current.scrollHeight;
-  });
 
   return (
     <section className="screen-panel screen-panel--chat">
@@ -125,7 +116,6 @@ export function ConfiguredPage({
           />
           <MessageList
             conversationMessages={conversationMessages}
-            messageListRef={messageListRef}
             onOpenHistoryPanel={onOpenHistoryPanel}
           />
           <Composer

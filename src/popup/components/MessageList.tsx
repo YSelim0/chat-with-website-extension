@@ -1,17 +1,34 @@
+import { useEffect, useRef } from 'react';
+
 import historyIconUrl from '../../assets/icons/history.svg';
 import type { ConversationMessage } from '../../types/chat';
 
 export function MessageList({
   conversationMessages,
-  messageListRef,
   onOpenHistoryPanel,
 }: {
   conversationMessages: ConversationMessage[];
-  messageListRef: React.RefObject<HTMLDivElement | null>;
   onOpenHistoryPanel: () => void;
 }) {
+  const scrollContainerRef = useRef<HTMLElement | null>(null);
+  const bottomAnchorRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!scrollContainerRef.current || !bottomAnchorRef.current) {
+      return;
+    }
+
+    bottomAnchorRef.current.scrollIntoView({
+      block: 'end',
+      behavior: 'auto',
+    });
+  });
+
   return (
-    <section className="chat-card chat-card--scrollable">
+    <section
+      className="chat-card chat-card--scrollable"
+      ref={scrollContainerRef}
+    >
       {conversationMessages.length === 0 ? (
         <div className="empty-state-block">
           <p className="chat-card__eyebrow">Assistant</p>
@@ -36,7 +53,7 @@ export function MessageList({
           </div>
         </div>
       ) : (
-        <div className="message-list" ref={messageListRef}>
+        <div className="message-list">
           {conversationMessages.map((message) => (
             <article
               className={`message-bubble message-bubble--${message.role}`}
@@ -46,6 +63,7 @@ export function MessageList({
               <p className="chat-card__body">{message.content}</p>
             </article>
           ))}
+          <div ref={bottomAnchorRef} />
         </div>
       )}
     </section>
