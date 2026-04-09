@@ -103,21 +103,23 @@ export function ConfiguredPage({
         />
       ) : (
         <>
-          <SnapshotCard
-            activeHostname={activeHostname}
-            activeSnapshot={activeSnapshot}
-            errorMessage={errorMessage}
-            isRefreshingContext={isRefreshingContext}
-            isUsingLiveSnapshot={isUsingLiveSnapshot}
-            latestSnapshot={latestSnapshot}
-            snapshotAction={snapshotAction}
-            onOpenProviderSettings={onOpenProviderSettings}
-            onRefreshContext={onRefreshContext}
-          />
-          <MessageList
-            conversationMessages={conversationMessages}
-            onOpenHistoryPanel={onOpenHistoryPanel}
-          />
+          <div className="chat-content">
+            <SnapshotCard
+              activeHostname={activeHostname}
+              activeSnapshot={activeSnapshot}
+              errorMessage={errorMessage}
+              isRefreshingContext={isRefreshingContext}
+              isUsingLiveSnapshot={isUsingLiveSnapshot}
+              latestSnapshot={latestSnapshot}
+              snapshotAction={snapshotAction}
+              onOpenProviderSettings={onOpenProviderSettings}
+              onRefreshContext={onRefreshContext}
+            />
+            <MessageList
+              conversationMessages={conversationMessages}
+              onOpenHistoryPanel={onOpenHistoryPanel}
+            />
+          </div>
           <Composer
             activeConversation={activeConversation}
             activeSnapshot={activeSnapshot}
