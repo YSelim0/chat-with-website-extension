@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 
 import historyIconUrl from '../../assets/icons/history.svg';
 import type { ConversationMessage } from '../../types/chat';
+import { MarkdownMessage } from './MarkdownMessage';
 
 export function MessageList({
   conversationMessages,
@@ -60,7 +61,11 @@ export function MessageList({
               key={message.id}
             >
               <p className="chat-card__eyebrow">{message.role}</p>
-              <p className="chat-card__body">{message.content}</p>
+              {message.role === 'assistant' ? (
+                <MarkdownMessage content={message.content} />
+              ) : (
+                <p className="chat-card__body">{message.content}</p>
+              )}
             </article>
           ))}
           <div ref={bottomAnchorRef} />

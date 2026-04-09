@@ -523,6 +523,68 @@ body {
   white-space: pre-wrap;
 }
 
+.markdown-message {
+  color: #ffffff;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.markdown-message > :first-child {
+  margin-top: 0;
+}
+
+.markdown-message > :last-child {
+  margin-bottom: 0;
+}
+
+.markdown-message p,
+.markdown-message ul,
+.markdown-message ol,
+.markdown-message pre,
+.markdown-message blockquote {
+  margin: 0 0 10px;
+}
+
+.markdown-message ul,
+.markdown-message ol {
+  padding-left: 18px;
+}
+
+.markdown-message li + li {
+  margin-top: 4px;
+}
+
+.markdown-message code {
+  padding: 1px 5px;
+  border-radius: 6px;
+  background: rgba(9, 20, 19, 0.85);
+  color: #b0e4cc;
+  font-size: 13px;
+}
+
+.markdown-message pre {
+  overflow-x: auto;
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(9, 20, 19, 0.9);
+}
+
+.markdown-message pre code {
+  padding: 0;
+  background: transparent;
+  color: #ffffff;
+}
+
+.markdown-message blockquote {
+  padding-left: 12px;
+  border-left: 3px solid #b0e4cc;
+  color: #d7f3e6;
+}
+
+.markdown-message a {
+  color: #b0e4cc;
+}
+
 .message-bubble--user {
   background: #408a71;
 }
