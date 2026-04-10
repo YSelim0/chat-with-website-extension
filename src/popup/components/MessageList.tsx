@@ -4,6 +4,18 @@ import historyIconUrl from '../../assets/icons/history.svg';
 import type { ConversationMessage } from '../../types/chat';
 import { MarkdownMessage } from './MarkdownMessage';
 
+function getMessageAuthorLabel(role: ConversationMessage['role']) {
+  if (role === 'assistant') {
+    return 'Website';
+  }
+
+  if (role === 'user') {
+    return 'You';
+  }
+
+  return role;
+}
+
 export function MessageList({
   isAssistantThinking,
   conversationMessages,
@@ -34,7 +46,7 @@ export function MessageList({
     >
       {conversationMessages.length === 0 ? (
         <div className="empty-state-block">
-          <p className="chat-card__eyebrow">Assistant</p>
+          <p className="chat-card__eyebrow">Website</p>
           <p className="chat-card__body">
             Ask a question about the current page. Responses will use only the
             saved snapshot context.
@@ -62,7 +74,9 @@ export function MessageList({
               className={`message-bubble message-bubble--${message.role}`}
               key={message.id}
             >
-              <p className="chat-card__eyebrow">{message.role}</p>
+              <p className="chat-card__eyebrow">
+                {getMessageAuthorLabel(message.role)}
+              </p>
               {message.role === 'assistant' ? (
                 <MarkdownMessage content={message.content} />
               ) : (
@@ -72,9 +86,9 @@ export function MessageList({
           ))}
           {isAssistantThinking ? (
             <article className="message-bubble message-bubble--assistant message-bubble--thinking">
-              <p className="chat-card__eyebrow">assistant</p>
+              <p className="chat-card__eyebrow">Website</p>
               <div className="thinking-dots" role="status" aria-live="polite">
-                <span className="sr-only">Assistant is typing</span>
+                <span className="sr-only">Website is typing</span>
                 <span />
                 <span />
                 <span />
