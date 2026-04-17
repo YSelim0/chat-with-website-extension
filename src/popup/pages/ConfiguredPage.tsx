@@ -1,4 +1,4 @@
-import { type KeyboardEvent, useEffect, useRef } from 'react';
+import type { KeyboardEvent } from 'react';
 
 import historyIconUrl from '../../assets/icons/history.svg';
 import type {
@@ -22,6 +22,7 @@ export function ConfiguredPage({
   conversationHistory,
   conversationMessages,
   errorMessage,
+  isAssistantThinking,
   isRefreshingContext,
   isSubmittingQuestion,
   isUsingLiveSnapshot,
@@ -44,6 +45,7 @@ export function ConfiguredPage({
   conversationHistory: ConversationSummary[];
   conversationMessages: ConversationMessage[];
   errorMessage: string | null;
+  isAssistantThinking: boolean;
   isRefreshingContext: boolean;
   isSubmittingQuestion: boolean;
   isUsingLiveSnapshot: boolean;
@@ -60,16 +62,7 @@ export function ConfiguredPage({
   onRefreshContext: () => void;
   onReturnToChatPanel: () => void;
 }) {
-  const messageListRef = useRef<HTMLDivElement | null>(null);
   const snapshotAction = getSnapshotAction(errorMessage);
-
-  useEffect(() => {
-    if (!messageListRef.current) {
-      return;
-    }
-
-    messageListRef.current.scrollTop = messageListRef.current.scrollHeight;
-  });
 
   return (
     <section className="screen-panel screen-panel--chat">
@@ -112,22 +105,24 @@ export function ConfiguredPage({
         />
       ) : (
         <>
-          <SnapshotCard
-            activeHostname={activeHostname}
-            activeSnapshot={activeSnapshot}
-            errorMessage={errorMessage}
-            isRefreshingContext={isRefreshingContext}
-            isUsingLiveSnapshot={isUsingLiveSnapshot}
-            latestSnapshot={latestSnapshot}
-            snapshotAction={snapshotAction}
-            onOpenProviderSettings={onOpenProviderSettings}
-            onRefreshContext={onRefreshContext}
-          />
-          <MessageList
-            conversationMessages={conversationMessages}
-            messageListRef={messageListRef}
-            onOpenHistoryPanel={onOpenHistoryPanel}
-          />
+          <div className="chat-content">
+            <SnapshotCard
+              activeHostname={activeHostname}
+              activeSnapshot={activeSnapshot}
+              errorMessage={errorMessage}
+              isRefreshingContext={isRefreshingContext}
+              isUsingLiveSnapshot={isUsingLiveSnapshot}
+              latestSnapshot={latestSnapshot}
+              snapshotAction={snapshotAction}
+              onOpenProviderSettings={onOpenProviderSettings}
+              onRefreshContext={onRefreshContext}
+            />
+            <MessageList
+              isAssistantThinking={isAssistantThinking}
+              conversationMessages={conversationMessages}
+              onOpenHistoryPanel={onOpenHistoryPanel}
+            />
+          </div>
           <Composer
             activeConversation={activeConversation}
             activeSnapshot={activeSnapshot}

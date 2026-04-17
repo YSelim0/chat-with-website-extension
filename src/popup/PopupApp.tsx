@@ -19,6 +19,7 @@ export function PopupApp() {
             conversationHistory={controller.conversationHistory}
             conversationMessages={controller.conversationMessages}
             errorMessage={controller.errorMessage}
+            isAssistantThinking={controller.isAssistantThinking}
             isRefreshingContext={controller.isRefreshingContext}
             isSubmittingQuestion={controller.isSubmittingQuestion}
             isUsingLiveSnapshot={controller.isUsingLiveSnapshot}
@@ -48,6 +49,7 @@ export function PopupApp() {
             conversationHistory={controller.conversationHistory}
             conversationMessages={controller.conversationMessages}
             errorMessage={controller.errorMessage}
+            isAssistantThinking={controller.isAssistantThinking}
             isRefreshingContext={controller.isRefreshingContext}
             isSubmittingQuestion={controller.isSubmittingQuestion}
             isUsingLiveSnapshot={controller.isUsingLiveSnapshot}

@@ -9,6 +9,8 @@
     "zip": "wxt zip",
     "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",
+    "test:e2e": "npm run build && playwright test",
+    "test:e2e:headed": "npm run build && playwright test --headed",
     "check": "biome check biome.json docs entrypoints src package.json tsconfig.json vitest.config.ts wxt-env.d.ts wxt.config.ts",
     "format": "biome format --write ."
   },
@@ -34,7 +36,9 @@
     "@testing-library/user-event": "^14.6.1",
     "@types/react": "^19.1.10",
     "@types/react-dom": "^19.1.7",
+    "@playwright/test": "^1.55.0",
     "jsdom": "^27.0.0",
+    "playwright": "^1.55.0",
     "typescript": "^5.9.2",
     "vitest": "^3.2.4",
     "wxt": "^0.20.7"

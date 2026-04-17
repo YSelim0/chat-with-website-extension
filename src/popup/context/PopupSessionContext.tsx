@@ -39,6 +39,7 @@ export type PopupSessionState = {
   isLoadingOpenRouterModels: boolean;
   isRefreshingContext: boolean;
   isSaving: boolean;
+  isAssistantThinking: boolean;
   isSubmittingQuestion: boolean;
   latestSnapshot: SnapshotSummary | null;
   modelSearchQuery: string;
@@ -70,6 +71,7 @@ const initialPopupSessionState: PopupSessionState = {
   isLoadingOpenRouterModels: false,
   isRefreshingContext: false,
   isSaving: false,
+  isAssistantThinking: false,
   isSubmittingQuestion: false,
   latestSnapshot: null,
   modelSearchQuery: '',

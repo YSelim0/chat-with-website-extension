@@ -1,3 +1,5 @@
+import { nanoid } from 'nanoid';
+
 import { getDefaultModelForProvider } from '../../lib/providers/catalog';
 import {
   getConversationById,
@@ -22,6 +24,7 @@ import {
 export function usePopupChatFlow({
   activeSnapshot,
   apiKeyInput,
+  conversationMessages,
   isSubmittingQuestion,
   questionInput,
   selectedModelId,
@@ -31,6 +34,7 @@ export function usePopupChatFlow({
 }: {
   activeSnapshot: PopupSessionState['activeSnapshot'];
   apiKeyInput: string;
+  conversationMessages: PopupSessionState['conversationMessages'];
   isSubmittingQuestion: boolean;
   questionInput: string;
   selectedModelId: string;
@@ -177,7 +181,21 @@ export function usePopupChatFlow({
     }
 
     try {
-      setSessionState({ isSubmittingQuestion: true, errorMessage: null });
+      setSessionState({
+        conversationMessages: [
+          ...conversationMessages,
+          {
+            content: trimmedQuestion,
+            createdAt: new Date().toISOString(),
+            id: nanoid(),
+            role: 'user',
+          },
+        ],
+        errorMessage: null,
+        isAssistantThinking: true,
+        isSubmittingQuestion: true,
+        questionInput: '',
+      });
 
       const response = (await chrome.runtime.sendMessage({
         payload: {
@@ -190,7 +208,10 @@ export function usePopupChatFlow({
       })) as AskQuestionResponse;
 
       if (!response.ok) {
-        setSessionState({ errorMessage: response.error });
+        setSessionState({
+          errorMessage: response.error,
+          isAssistantThinking: false,
+        });
         return;
       }
 
@@ -198,7 +219,7 @@ export function usePopupChatFlow({
         activeConversation: response.conversation,
         conversationMessages: response.messages,
         conversationHistory: await listConversationSummaries(),
-        questionInput: '',
+        isAssistantThinking: false,
       });
     } catch (error) {
       setSessionState({
@@ -206,6 +227,7 @@ export function usePopupChatFlow({
           error instanceof Error
             ? error.message
             : 'The grounded chat request failed unexpectedly.',
+        isAssistantThinking: false,
       });
     } finally {
       setSessionState({ isSubmittingQuestion: false });
